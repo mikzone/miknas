@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  miknas:
+    image: miknas
+    ports:
+      - "2020:2020"
+    volumes:
+      - ./webroot:/web
+    restart: always

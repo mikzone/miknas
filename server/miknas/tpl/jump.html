@@ -1,0 +1,71 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="viewport" content="user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1,width=device-width">    
+        <title>跳转提示</title>
+        <style type="text/css">
+            * {
+                padding: 0;
+                margin: 0;
+            }
+            body {
+                background: #fff;
+                font-family: "微软雅黑";
+                color: #333;
+                font-size: 16px;
+            }
+            .system-message {
+                padding: 24px 48px;
+            }
+            .system-message h1 {
+                font-size: 100px;
+                font-weight: normal;
+                line-height: 120px;
+                margin-bottom: 12px;
+            }
+            .system-message .jump {
+                padding-top: 10px;
+            }
+            .system-message .jump a {
+                color: #333;
+            }
+            .system-message .success,
+            .system-message .error {
+                line-height: 1.8em;
+                font-size: 36px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="system-message">
+            <div id="content"></div>
+            <p class="jump">
+                页面自动 <a id="href" href="">跳转</a> 等待时间：
+                <b id="wait"></b>
+            </p>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                const serverData = {{ .SERVER_TEMPLATE_DATA }};
+                const href = serverData.jumpurl;
+                let content = "";
+                if (serverData.flag) {
+                    content = `<h1>:)</h1> <p class="success">${serverData.message}</p>`;
+                } else {
+                    content = `<h1>:(</h1> <p class="error">${serverData.message}</p>`;
+                }
+                document.getElementById("content").innerHTML = content;
+                document.getElementById("href").href = href;
+                var wait = document.getElementById("wait");
+                wait.innerHTML = serverData.cd;
+                var interval = setInterval(function () {
+                    var time = --wait.innerHTML;
+                    if (time <= 0) {
+                        location.href = href;
+                        clearInterval(interval);
+                    }
+                }, 1000);
+            })();
+        </script>
+    </body>
+</html>
