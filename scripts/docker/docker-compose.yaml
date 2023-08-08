@@ -6,5 +6,5 @@ services:
     ports:
       - "2020:2020"
     volumes:
-      - ./webroot:/web
+      - ../../test/webroot:/web
     restart: always

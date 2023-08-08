@@ -27,10 +27,6 @@ func getClientInitInfo(ch *miknas.ContextHelper) {
 	})
 }
 
-type inDataBuild struct {
-	Stage string `json:"stage"`
-}
-
 func regRoutes(ext *MikNasExt) {
 	ext.POST("/getClientInitInfo", getClientInitInfo)
 }

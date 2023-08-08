@@ -104,7 +104,8 @@ ENV VIPS_WARNING=0
 ENV GIN_MODE=release
 ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so
 
-RUN groupadd -r --gid 1000 miknas && useradd --no-log-init -r -g 1000 -u 1000 miknas
+RUN groupadd -r --gid 1000 miknas && useradd --no-log-init -r -g 1000 -u 1000 miknas && \
+  mkdir -p /web/workspace && mkdir -p /web/config && chmod -R 777 /web
 USER miknas
 
 ENV PORT 2020
