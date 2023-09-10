@@ -2,126 +2,109 @@ package miknas
 
 import (
 	"fmt"
-	"os"
+	"io/fs"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
-type IPathHelper interface {
-	Root() string
-	MustAbs(relpath string) string
-	MustRel(fullpath string) string
-}
-
 type IFileSpace interface {
-	GetFsType() string
+	GetFstype() string
 	GetRelExt() IExtension
 	SetRelExt(ext IExtension)
 	// mode can be "r" or "w"
 	Ensure(ch *ContextHelper, mode string)
-	// return root abs path of fssubid
-	GetSubRoot(ch *ContextHelper, fssubid string) string
+	NewFsDriver(ch *ContextHelper, fssubid string) IFsDriver
+	NewFsDriverByAddr(fsaddr string) IFsDriver
+	GetAddr(self IFileSpace, ch *ContextHelper, fssubid string, fspath string) string
 }
 
-type BasePathHelper struct {
-	rootPath string // need to be a absolute path
+type fileStat struct {
+	name    string
+	size    int64
+	isDir   bool
+	mode    fs.FileMode
+	modTime time.Time
 }
 
-func (ph *BasePathHelper) Root() string {
-	return ph.rootPath
-}
+func (fst *fileStat) Name() string       { return fst.name }
+func (fst *fileStat) Size() int64        { return fst.size }
+func (fst *fileStat) Mode() fs.FileMode  { return fst.mode }
+func (fst *fileStat) ModTime() time.Time { return fst.modTime }
+func (fst *fileStat) IsDir() bool        { return fst.isDir }
+func (fst *fileStat) Sys() any           { return nil }
 
-// 根据相对于 workspace 的相对路径，获得对应的绝对路径
-func (ph *BasePathHelper) MustAbs(relpath string) string {
-	fullpath := filepath.Join(ph.rootPath, relpath)
-	result, err := filepath.Abs(fullpath)
-	if err != nil {
-		panic(err)
-	}
-	if !strings.HasPrefix(result, ph.rootPath) {
-		panic(NewFailRet("超出目录范围"))
-	}
-	return result
-}
-
-// 根据相对于 workspace 的相对路径，获得对应的绝对路径
-func (ph *BasePathHelper) MustRel(fullpath string) string {
-	if !strings.HasPrefix(fullpath, ph.rootPath) {
-		panic(NewFailRet("超出目录范围"))
-	}
-	result, err := filepath.Rel(fullpath, ph.rootPath)
-	if err != nil {
-		panic(err)
-	}
-	return result
-}
-
-func NewBasePathHelper(rootPath string, checkExist bool) IPathHelper {
-	root, absErr := filepath.Abs(rootPath)
-	if absErr != nil {
-		panic(NewFailRet(absErr.Error()))
-	}
-	if checkExist {
-		if _, err := os.Stat(root); os.IsNotExist(err) {
-			panic(NewFailRet(err.Error()))
-		}
-	}
-	return &BasePathHelper{rootPath: root}
-}
-
-var _ IPathHelper = (*BasePathHelper)(nil)
+var _ fs.FileInfo = (*fileStat)(nil)
 
 type BaseFileSpace struct {
-	FsType   string
+	Fstype   string
 	rootPath string
 	ResId    AuthResId
 	Ext      IExtension
 }
 
-func (fs *BaseFileSpace) GetFsType() string {
-	return fs.FsType
+func (fsp *BaseFileSpace) GetFstype() string {
+	return fsp.Fstype
 }
 
-func (fs *BaseFileSpace) GetRelExt() IExtension {
-	return fs.Ext
+func (fsp *BaseFileSpace) GetRelExt() IExtension {
+	return fsp.Ext
 }
 
-func (fs *BaseFileSpace) SetRelExt(ext IExtension) {
-	fs.Ext = ext
+func (fsp *BaseFileSpace) SetRelExt(ext IExtension) {
+	fsp.Ext = ext
 }
 
-func (fs *BaseFileSpace) GetSubRoot(ch *ContextHelper, fssubid string) string {
-	return fs.rootPath
+func (fsp *BaseFileSpace) NewFsDriver(ch *ContextHelper, fssubid string) IFsDriver {
+	return NewBaseFsDriver(fsp.rootPath, true)
 }
 
-func (fs *BaseFileSpace) ModeRes(mode string) AuthResId {
-	if len(fs.ResId) <= 0 {
+func (fsp *BaseFileSpace) GetAddr(self IFileSpace, ch *ContextHelper, fssubid string, fspath string) string {
+	self.Ensure(ch, "w")
+	fsd := self.NewFsDriver(ch, fssubid)
+	_, err := fsd.Stat(fsd, fspath, false)
+	ch.EnsureNoErr(err)
+	return fsp.Fstype + "|" + fssubid + "|" + fspath
+}
+
+func (fsp *BaseFileSpace) NewFsDriverByAddr(fsaddr string) IFsDriver {
+	parts := strings.Split(fsaddr, "|")
+	if parts[0] != fsp.Fstype {
+		return nil
+	}
+	fspath := parts[2]
+	fullpath := filepath.Join(fsp.rootPath, fspath)
+	return NewCommFsDriver(fullpath)
+}
+
+func (fsp *BaseFileSpace) ModeRes(mode string) AuthResId {
+	if len(fsp.ResId) <= 0 {
 		panic("ResId is empty")
 	}
-	return AuthResId(fmt.Sprintf("%s:%s", fs.ResId, mode))
+	return AuthResId(fmt.Sprintf("%s:%s", fsp.ResId, mode))
 }
 
-func (fs *BaseFileSpace) Ensure(ch *ContextHelper, mode string) {
-	if len(fs.ResId) <= 0 {
+func (fsp *BaseFileSpace) Ensure(ch *ContextHelper, mode string) {
+	if len(fsp.ResId) <= 0 {
 		return
 	}
-	resid := fs.ModeRes(mode)
+	resid := fsp.ModeRes(mode)
 	ch.Ensure(resid)
 }
 
-func (fs *BaseFileSpace) RegAuth(folderDesc string, sendClient bool) {
-	ext := fs.GetRelExt()
-	resid1 := fs.ModeRes("r")
+func (fsp *BaseFileSpace) RegAuth(folderDesc string, sendClient bool) {
+	ext := fsp.GetRelExt()
+	resid1 := fsp.ModeRes("r")
 	desc1 := fmt.Sprintf("读取 %s 下的文件和目录", folderDesc)
-	resid2 := fs.ModeRes("w")
+	resid2 := fsp.ModeRes("w")
 	desc2 := fmt.Sprintf("写入 %s 下的文件和目录", folderDesc)
 	ext.RegAuth(resid1, desc1, sendClient)
 	ext.RegAuth(resid2, desc2, sendClient)
 }
 
-func NewBaseFileSpace(fsType, rootPath string, resid AuthResId) *BaseFileSpace {
+func NewBaseFileSpace(fstype, rootPath string, resid AuthResId) *BaseFileSpace {
 	return &BaseFileSpace{
-		FsType:   fsType,
+		Fstype:   fstype,
 		rootPath: rootPath,
 		ResId:    resid,
 	}
@@ -136,25 +119,25 @@ type SimpleFileSpace struct {
 	BaseFileSpace
 }
 
-func (fs *SimpleFileSpace) Ensure(ch *ContextHelper, mode string) {
-	ch.Ensure(fs.ResId)
+func (fsp *SimpleFileSpace) Ensure(ch *ContextHelper, mode string) {
+	ch.Ensure(fsp.ResId)
 }
 
-func (fs *SimpleFileSpace) RegAuth(folderDesc string, sendClient bool) {
-	ext := fs.GetRelExt()
-	ext.RegAuth(fs.ResId, folderDesc, sendClient)
+func (fsp *SimpleFileSpace) RegAuth(folderDesc string, sendClient bool) {
+	ext := fsp.GetRelExt()
+	ext.RegAuth(fsp.ResId, folderDesc, sendClient)
 }
 
-func NewSimpleFileSpace(fsType, rootPath string, resid AuthResId) *SimpleFileSpace {
+func NewSimpleFileSpace(fstype, rootPath string, resid AuthResId) *SimpleFileSpace {
 	return &SimpleFileSpace{
-		BaseFileSpace: *NewBaseFileSpace(fsType, rootPath, resid),
+		BaseFileSpace: *NewBaseFileSpace(fstype, rootPath, resid),
 	}
 }
 
 // ----------------- 其它函数 --------------
 
-func DecomposeFsid(fsid string) (FsType, FsSubType string) {
-	// decompose into FsType and FsSubType
-	FsType, FsSubType, _ = strings.Cut(string(fsid), "_")
+func DecomposeFsid(fsid string) (Fstype, fssubid string) {
+	// decompose into Fstype and fssubid
+	Fstype, fssubid, _ = strings.Cut(string(fsid), "_")
 	return
 }

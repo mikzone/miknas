@@ -23,6 +23,7 @@ import MdcFileViewContainer from './FileView/MdcFileViewContainer.vue';
 import { computed } from 'vue';
 import { FileUtil } from 'miknas/exts/Drive/shares';
 import { useExtension } from '../extMain';
+import { gutil } from 'miknas/utils';
 
 const router = useRouter();
 const route = useRoute();
@@ -44,6 +45,12 @@ const props = defineProps({
     type: String,
     default: 'list',
   },
+  extraConf: {
+    type: Object,
+    default: () => {
+      return {};
+    },
+  },
 });
 
 const fspath = computed(()=>{
@@ -52,7 +59,7 @@ const fspath = computed(()=>{
 })
 
 const myExtraConf = computed(()=>{
-  return {
+  let ret = {
     openDirFn: (fsrela) => {
       let newloc = { params: { routeSubPath: fsrela } };
       router.push(newloc);
@@ -70,6 +77,10 @@ const myExtraConf = computed(()=>{
     },
     initFsrela: route.params.routeSubPath,
   }
+  if (props.extraConf) {
+    gutil.mergeDict(ret, props.extraConf)
+  }
+  return ret
 })
 
 // 该组件提供给那些需要跳转目录，有需要能回到之前位置的

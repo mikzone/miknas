@@ -25,6 +25,9 @@ func viewTable(ch *miknas.ContextHelper) {
 	var results []map[string]interface{}
 	err := db.Table(tablename).Find(&results).Error
 	ch.EnsureNoErr(err)
+	if results == nil {
+		results = []map[string]interface{}{}
+	}
 	ch.SucResp(results)
 }
 

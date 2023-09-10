@@ -17,7 +17,13 @@ import MdcFolderSelectDlg from './components/MdcFolderSelectDlg.vue';
 import MdcFileSelectDlg from './components/MdcFileSelectDlg.vue';
 import MdcFileUploadDlg from './components/MdcFileUploadDlg.vue';
 import MdcFileViewContainerDlg from './components/FileView/MdcFileViewContainerDlg.vue';
-import { openMultOperateDlg } from '../Official/shares';
+import {
+  DataRule,
+  FormTypes,
+  coOpenFormDlg,
+  openMultOperateDlg,
+  openTextCopyDlg,
+} from '../Official/shares';
 
 const viewStore = useViewStore();
 const cacheStore = useCacheStore();
@@ -195,6 +201,43 @@ export const FileUtil = {
   },
 };
 
+const ShareFormData = [
+  {
+    id: 'pwd',
+    title: '提取码',
+    component: FormTypes.MdcTextInput,
+    componentProps: {
+      filled: true,
+    },
+    default: '',
+    desc: `空表示不需要提取码`,
+    rules: [DataRule.maxLength(6)],
+  },
+  {
+    id: 'intv',
+    title: '有效期',
+    component: FormTypes.MdcSelect,
+    componentProps: {
+      filled: true,
+    },
+    selectOptions: [
+      { label: '1天', value: 1 * 24 * 60 * 60 },
+      { label: '3天', value: 3 * 24 * 60 * 60 },
+      { label: '7天', value: 7 * 24 * 60 * 60 },
+      { label: '31天', value: 31 * 24 * 60 * 60 },
+      { label: '永久', value: 0 },
+    ],
+    default: 7 * 24 * 60 * 60,
+  },
+];
+
+export function viewShareRoute(info, isfull) {
+  const extsObj = useExtension();
+  const routeLocate = extsObj.routePath(`s/${info.sid}`);
+  if (!isfull) return routeLocate;
+  return gutil.routeFullUrl(routeLocate);
+}
+
 export function useFileView(fsid, rootPath, extraConf) {
   rootPath = rootPath || '';
   extraConf = extraConf || {};
@@ -308,6 +351,9 @@ export function useFileView(fsid, rootPath, extraConf) {
       else if (selectLen == fileState.curFiles.length) return 'check_box';
       else return 'indeterminate_check_box';
     }),
+    isReadOnly: computed(()=>{
+      return extraConf.isReadOnly;
+    })
   };
 
   const extsObj = useExtension();
@@ -345,6 +391,7 @@ export function useFileView(fsid, rootPath, extraConf) {
       let stateName = '加载目录中';
       fileOp.addLoadingState(stateName);
       let fileInfos = await cacheStore.tryRefreshFiles(fsid, path, withCache);
+      if (!fileInfos) return;
       fileState.curPath = path;
       fileState.curFiles = fileInfos;
       fileOp.quitSelectMode();
@@ -458,6 +505,45 @@ export function useFileView(fsid, rootPath, extraConf) {
       await fileOp.tryRefreshFiles();
     },
 
+    async shareFile(fileName) {
+      if (!fileName) {
+        MikCall.sendErrorTips('文件名不能为空');
+        return;
+      }
+      let [isOk, fillData] = await coOpenFormDlg({
+        formConfs: ShareFormData,
+        title: `分享文件: ${fileName}`,
+      });
+      if (!isOk) return;
+      let iRet = await extsObj.mcpost('addShare', {
+        fsid: fileState.fsid,
+        fspath: contactFolderName(fileState.curPath, fileName),
+        pwd: fillData.pwd,
+        intv: fillData.intv,
+      });
+      if (!iRet.suc) {
+        MikCall.alertRespErrMsg(iRet);
+        return;
+      }
+      openTextCopyDlg({ title: '分享链接如下:', txt: viewShareRoute(iRet.ret, true) });
+    },
+
+    async genTmpDownUrl(fileName) {
+      if (!fileName) {
+        MikCall.sendErrorTips('文件名不能为空');
+        return;
+      }
+      let iRet = await extsObj.mcpost('genTmpDownUrl', {
+        fsid: fileState.fsid,
+        fspath: contactFolderName(fileState.curPath, fileName),
+      });
+      if (!iRet.suc) {
+        MikCall.alertRespErrMsg(iRet);
+        return;
+      }
+      openTextCopyDlg({ title: '临时下载链接如下:', txt: extsObj.serverUrl(iRet.ret, undefined, true) });
+    },
+
     async reqCopyFile(fileName) {
       if (!fileName) {
         MikCall.sendErrorTips('文件名不能为空');
@@ -542,13 +628,29 @@ export function useFileView(fsid, rootPath, extraConf) {
       Dialog.create({
         component: MdcFileUploadDlg,
         componentProps: {
-          factoryInfo: {
-            url: extsObj.serverUrl('uploadFiles'),
-            method: 'POST',
-            formFields: [
-              { name: 'fspath', value: fileState.curPath },
-              { name: 'fsid', value: fileState.fsid },
-            ],
+          factory: async (files) => {
+            if (files.length != 1) {
+              throw '只能上传单个文件'
+            }
+            let curFile = files[0];
+            let params = {
+              fsid: fileState.fsid,
+              fspath: fileState.curPath,
+              name: curFile.name,
+            }
+
+            if (curFile.size > 1 * 1024 * 1024) {
+              // 对于大的文件先判断一下再上传
+              let iRet = await extsObj.mcpost('precheckUpload', params);
+              if (!iRet.suc) {
+                throw iRet.why || '未定义错误'
+              }
+            }
+
+            return {
+              url: extsObj.serverUrl('uploadFiles', params),
+              method: 'POST',
+            }
           },
         },
       }).onOk(() => {

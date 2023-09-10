@@ -43,7 +43,7 @@ func addSecret(ch *miknas.ContextHelper) {
 	result := db.Create(bm)
 	ch.EnsureNoErr(result.Error)
 	info := PackSecretInfo(bm)
-	ch.UsLog("addSecret", info)
+	ch.UsLog("addSecret", "bm", bm)
 	ch.SucResp(info)
 }
 
@@ -70,7 +70,7 @@ func modifySecret(ch *miknas.ContextHelper) {
 	}
 	db.Model(bm).Updates(modifyInfo)
 	info := PackSecretInfo(bm)
-	ch.UsLog("modifySecret", info)
+	ch.UsLog("modifySecret", "bm", bm)
 	ch.SucResp(info)
 }
 
@@ -112,13 +112,12 @@ func removeSecret(ch *miknas.ContextHelper) {
 		ch.FailResp("不是你的书签")
 		return
 	}
-	info := PackSecretInfo(bm)
 	result := db.Delete(&bm)
 	if result.Error != nil {
 		ch.FailResp(result.Error.Error())
 		return
 	}
-	ch.UsLog("removeSecret", info)
+	ch.UsLog("removeSecret", "bm", bm)
 	ch.SucResp(result.RowsAffected)
 }
 

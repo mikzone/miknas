@@ -105,9 +105,9 @@ async function tryDecrypt() {
     return;
   }
   let myaes = new MyAes(pwd);
-  let decrpytMsg = myaes.decrypt(state.info.txt);
+  let [decrpytMsg, decryptErr] = myaes.decryptEx(state.info.txt);
   if (!decrpytMsg) {
-    MikCall.sendErrorTips('密码不正确!');
+    MikCall.sendErrorTips(decryptErr);
     return;
   }
   state.decrpytMsg = decrpytMsg;

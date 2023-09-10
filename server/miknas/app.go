@@ -2,7 +2,8 @@ package miknas
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
+	"strings"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -18,15 +19,17 @@ type App struct {
 	ConfMgr        *ConfigManager
 	AuthMgr        *AuthResMgr
 	sessionHandler gin.HandlerFunc
-	Logger         *log.Logger
-	UsLogger       *log.Logger
+	loggers        map[string]*slog.Logger
 	Db             *gorm.DB
-	WorkSpace      IPathHelper
+	WorkSpace      IDiskFsDriver
 	FileSpaces     map[string]IFileSpace
 }
 
 const ctxAppKey = "miknasApp"
 const ctxExtKey = "miknasExt"
+
+const ctxSessionNameUserKey = "u"
+const ctxSessionNameFixKey = "f"
 
 // register one extension
 func (a *App) AddExt(ext IExtension) {
@@ -57,7 +60,9 @@ func (a *App) AddExt(ext IExtension) {
 			}
 			secret := secretVal.(string)
 			store := cookie.NewStore([]byte(secret))
-			a.sessionHandler = sessions.Sessions("miknas", store)
+			sessionNames := []string{ctxSessionNameUserKey, ctxSessionNameFixKey}
+			// 两个session，一个是跟随user登录增加删除的，一个是一直固定的登录也不会清理的
+			a.sessionHandler = sessions.SessionsMany(sessionNames, store)
 		}
 		a.sessionHandler(c)
 	})
@@ -68,12 +73,21 @@ func (a *App) GetExtids() []string {
 	return a.extids
 }
 
-func (a *App) GetExt(extid string) IExtension {
-	return a.exts[extid]
+func (a *App) GetLogger(name string) *slog.Logger {
+	if len(name) < 1 {
+		name = "run_out"
+	}
+	l, ok := a.loggers[name]
+	if !ok {
+		filename, needStdOut := strings.CutSuffix(name, "_out")
+		l = CreateSlogLogger(a, filename, needStdOut)
+		a.loggers[name] = l
+	}
+	return l
 }
 
-func (a *App) Log(format string, v ...any) {
-	a.Logger.Printf(format, v...)
+func (a *App) GetExt(extid string) IExtension {
+	return a.exts[extid]
 }
 
 // a middleware for inject cur app to gin context
@@ -88,6 +102,8 @@ func (a *App) InjectToCtxMiddleware() gin.HandlerFunc {
 }
 
 func (a *App) StartInit() {
+	wspath := a.ConfMgr.Get("MIKNAS_WORKSPACE").(string)
+	a.WorkSpace = NewBaseFsDriver(wspath, true)
 	// 初始化db
 	dbpath := a.ConfMgr.Get("MIKNAS_DATABASE_PATH").(string)
 	dbDebug := a.ConfMgr.Get("MIKNAS_DATABASE_DEBUG").(string) == "1"
@@ -100,8 +116,6 @@ func (a *App) StartInit() {
 		panic(err)
 	}
 	a.Db = db
-	wspath := a.ConfMgr.Get("MIKNAS_WORKSPACE").(string)
-	a.WorkSpace = NewBasePathHelper(wspath, true)
 	for _, ext := range a.exts {
 		ext.OnInit()
 	}
@@ -109,7 +123,7 @@ func (a *App) StartInit() {
 
 // 注册文件空间
 func (a *App) RegFileSpace(filespace IFileSpace) error {
-	fstype := filespace.GetFsType()
+	fstype := filespace.GetFstype()
 	if fstype == "" {
 		return NewFailRet("fstype 不能为空")
 	}
@@ -118,7 +132,7 @@ func (a *App) RegFileSpace(filespace IFileSpace) error {
 	}
 	preFilespace, exist := a.FileSpaces[fstype]
 	if exist {
-		return NewFailRet("扩展(%s)中的FsType(%s)在扩展(%s)中已定义", filespace.GetRelExt().GetId(), fstype, preFilespace.GetRelExt().GetId())
+		return NewFailRet("扩展(%s)中的Fstype(%s)在扩展(%s)中已定义", filespace.GetRelExt().GetId(), fstype, preFilespace.GetRelExt().GetId())
 	}
 	a.FileSpaces[fstype] = filespace
 	return nil
@@ -130,13 +144,12 @@ func NewApp(r *gin.RouterGroup) *App {
 		svrRouter:  svrRouter,
 		extids:     []string{},
 		exts:       map[string]IExtension{},
+		loggers:    map[string]*slog.Logger{},
 		ConfMgr:    NewConfigManager(),
 		AuthMgr:    NewAuthResMgr(),
 		FileSpaces: map[string]IFileSpace{},
 	}
 	svrRouter.Use(app.InjectToCtxMiddleware())
 	svrRouter.Use(HandleFailRetMiddleware)
-	app.Logger = log.Default()
-	app.UsLogger = log.Default()
 	return app
 }

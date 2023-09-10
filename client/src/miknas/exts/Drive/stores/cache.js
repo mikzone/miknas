@@ -70,7 +70,8 @@ export const useCacheStore = defineStore('driveCache', {
       let ret = iRet.ret;
       fspath = ret.fspath;
       for (let fileInfo of ret.files) {
-        fileInfo.viewSize = FileUtil.formatSize(fileInfo.size);
+        if (fileInfo.size) fileInfo.viewSize = FileUtil.formatSize(fileInfo.size);
+        else fileInfo.viewSize = '';
         fileInfo.viewModify = FileUtil.formatTs(fileInfo.modify * 1000);
         if (fileInfo.isFile) {
           fileInfo.fileType = FileUtil.getFileType(fileInfo.name);
@@ -90,8 +91,8 @@ export const useCacheStore = defineStore('driveCache', {
         return sortSave;
       }
       this.updateRec(fsid, fspath, 'sort', {
-        method: 'name',
-        desc: false,
+        method: 'modify',
+        desc: true,
       });
       return this.getOneRec(fsid, fspath, 'sort');
     },

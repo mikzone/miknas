@@ -2,6 +2,7 @@ package miknas
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"path"
 
@@ -12,6 +13,7 @@ type HandlerFunc func(*ContextHelper)
 
 type IExtension interface {
 	bindApp(*App)
+	GetApp() *App
 	GetId() string
 	GetRouter() *gin.RouterGroup
 	GetUserAuth(*ContextHelper) IUserAuth
@@ -20,13 +22,16 @@ type IExtension interface {
 	RegAuth(AuthResId, string, bool) error
 	OnBind()
 	OnInit()
+	GetLogger(string) *slog.Logger
+	Logger() *slog.Logger
 	Res(string) AuthResId
 }
 
 type Extension struct {
-	ExtId  string
-	App    *App
-	Router *gin.RouterGroup
+	ExtId   string
+	App     *App
+	Router  *gin.RouterGroup
+	loggers map[string]*slog.Logger
 }
 
 // bind to app
@@ -36,6 +41,23 @@ func (r *Extension) bindApp(app *App) {
 	}
 	r.App = app
 	r.Router = app.svrRouter.Group("/" + r.ExtId)
+}
+
+func (r *Extension) GetApp() *App {
+	return r.App
+}
+
+func (r *Extension) GetLogger(name string) *slog.Logger {
+	l, ok := r.loggers[name]
+	if !ok {
+		l = r.GetApp().GetLogger(name).With("ExtId", r.GetId())
+		r.loggers[name] = l
+	}
+	return l
+}
+
+func (r *Extension) Logger() *slog.Logger {
+	return r.GetLogger("")
 }
 
 func (r *Extension) GetId() string {
@@ -151,6 +173,7 @@ var _ IExtension = (*Extension)(nil)
 
 func NewExtension(ExtId string) Extension {
 	return Extension{
-		ExtId: ExtId,
+		ExtId:   ExtId,
+		loggers: map[string]*slog.Logger{},
 	}
 }

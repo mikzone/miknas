@@ -58,7 +58,7 @@ const ModifyPwdFormData = [
       type: 'password',
     },
     default: '',
-    rules: [DataRule.minLenght(3)],
+    rules: [DataRule.minLength(3)],
   },
   {
     id: 'newPwd1',
@@ -69,7 +69,7 @@ const ModifyPwdFormData = [
       type: 'password',
     },
     default: '',
-    rules: [DataRule.minLenght(3)],
+    rules: [DataRule.minLength(3)],
   },
   {
     id: 'newPwd2',
@@ -80,7 +80,7 @@ const ModifyPwdFormData = [
       type: 'password',
     },
     default: '',
-    rules: [DataRule.minLenght(3)],
+    rules: [DataRule.minLength(3)],
   },
 ];
 

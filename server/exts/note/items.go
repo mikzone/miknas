@@ -108,7 +108,7 @@ func addItem(ch *miknas.ContextHelper) {
 	}
 	db.Create(item)
 	info := PackNoteItem(item)
-	ch.UsLog("addItem", info)
+	ch.UsLog("addItem", "item", item)
 	ch.SucResp(info)
 }
 
@@ -175,7 +175,7 @@ func modifyItem(ch *miknas.ContextHelper) {
 	result := db.Model(item).Updates(modifyInfo)
 	ch.EnsureNoErr(result.Error)
 	info := PackNoteItem(item)
-	ch.UsLog("modifyItem", info)
+	ch.UsLog("modifyItem", "item", item)
 	ch.SucResp(info)
 }
 
@@ -200,10 +200,9 @@ func deleteItem(ch *miknas.ContextHelper) {
 		return
 	}
 
-	info := PackNoteItem(item)
 	result := db.Delete(&item)
 	ch.EnsureNoErr(result.Error)
-	ch.UsLog("deleteItem", info)
+	ch.UsLog("deleteItem", "item", item)
 	ch.SucResp(result.RowsAffected)
 }
 

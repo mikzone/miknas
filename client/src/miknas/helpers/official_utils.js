@@ -1,6 +1,8 @@
 import axios from 'axios';
 import Qs from 'qs';
 import CryptoJS from 'crypto-js';
+import bcryptjs from 'bcryptjs';
+
 import {
   Notify,
   LocalStorage,
@@ -102,6 +104,11 @@ export var gutil = {
   getCacheData: function (key) {
     return CACHE_DATA[key];
   },
+  mergeDict: function (dstObj, srcObj) {
+    for (let [k, v] of Object.entries(srcObj)) {
+      dstObj[k] = v
+    }
+  },
   getDictValueByKeys: function (data, keys, defv) {
     let ret = data;
     for (let k of keys) {
@@ -131,6 +138,9 @@ export var gutil = {
   routeFullUrl(routeLocate) {
     let router = gutil.getCacheData('router');
     let href = router.resolve(routeLocate).href;
+    return gutil.genFullUrl(href);
+  },
+  genFullUrl(href) {
     let origin = window.location.origin;
     if (href.startsWith(origin)) return href;
     else if (href.startsWith('/')) return `${origin}${href}`;
@@ -162,11 +172,13 @@ export var gutil = {
 
 export class MyAes {
   constructor(stringKey) {
-    let hashVal = CryptoJS.SHA256(stringKey).toString();
-    let key = hashVal.substring(8, 24);
-    let iv = hashVal.substring(40, 56);
-    this.key = CryptoJS.enc.Utf8.parse(key);
-    this.iv = CryptoJS.enc.Utf8.parse(iv);
+    let tmpk1 = `mik_${stringKey}_aes`;
+    let tmpk2 = tmpk1.split('').reverse().join('');
+    let hash2 = CryptoJS.SHA256(tmpk2).toString(CryptoJS.enc.Hex);
+    let iv = hash2.substring(16, 48);
+    this.key = CryptoJS.SHA256(tmpk1);
+    this.iv = CryptoJS.enc.Hex.parse(iv);
+    this.pwd = stringKey;
   }
 
   encrypt(data) {
@@ -185,6 +197,28 @@ export class MyAes {
       padding: CryptoJS.pad.Pkcs7,
     });
     return bytes.toString(CryptoJS.enc.Utf8);
+  }
+
+  encryptEx(data) {
+    // 加密data，将hash的密码和加密后的密文一起打包
+    let hashPwd = bcryptjs.hashSync(this.pwd, 10);
+    let chiperTxt = this.encrypt(data);
+    return `${hashPwd} ${chiperTxt}`;
+  }
+
+  decryptEx(exData) {
+    let [hashPwd, chiperTxt] = exData.split(' ', 2);
+    if (!chiperTxt) return [null, '可能是老数据不被兼容,请用回老的版本'];
+    let comparePwd = bcryptjs.compareSync(this.pwd, hashPwd);
+    if (!comparePwd) return [null, '密码不正确'];
+    try {
+      let content = this.decrypt(chiperTxt);
+      if (!content) return [null, '原始密文不正确'];
+      return [content, null];
+    } catch(err) {
+      console.error(err);
+      return [null, '解密过程发生异常'];
+    }
   }
 }
 
@@ -254,13 +288,13 @@ export const MikCall = {
     });
   },
 
-  coMakePrompt(message, defaultValue, title) {
+  coMakePrompt(message, defaultValue, title, inputType) {
     return MikCall.coCreateDialog({
       title: title,
       message: message,
       prompt: {
         model: defaultValue || '',
-        type: 'text',
+        type: inputType || 'text',
       },
       cancel: true,
       persistent: true,
@@ -343,10 +377,7 @@ export const MikCall = {
     };
     let ret = axios(reqObj);
     if (!raw) {
-      ret = ret.then(
-        MikCall.filterResponseResult,
-        MikCall.catchResponseError
-      );
+      ret = ret.then(MikCall.filterResponseResult, MikCall.catchResponseError);
     }
     if (convErr) {
       ret = convErr(ret);

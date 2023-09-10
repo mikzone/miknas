@@ -17,7 +17,7 @@ type FailRet struct {
 }
 
 func (p *FailRet) MakeRespond(c *gin.Context) {
-	status := c.GetInt(ctxFailRetStatusKey)
+	status := c.GetInt(ctxFailStatusKey)
 	if status == 0 {
 		status = http.StatusOK
 	}

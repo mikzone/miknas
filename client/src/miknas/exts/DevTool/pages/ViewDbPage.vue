@@ -128,7 +128,9 @@ function showRow(row) {
   if (typeof(row) == 'string') txt = row;
   else txt = JSON.stringify(row, undefined, 2);
   if (!txt) return;
-  openTextCopyDlg({ txt });
+  let mode = 'raw';
+  let showSwitch = true;
+  openTextCopyDlg({ txt, mode, showSwitch });
 }
 
 function calcTableColumn(tableStructs) {

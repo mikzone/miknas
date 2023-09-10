@@ -14,8 +14,12 @@ func New() *MikNasExt {
 
 func (ext *MikNasExt) OnBind() {
 	regRoutes(ext)
+	regFileShareRoutes(ext)
+	ext.RegStrConf("MIKNAS_DRIVE_NEED_DIR_SIZE", "1", "是否计算文件夹大小", false)
 }
 
 func (ext *MikNasExt) OnInit() {
-
+	db := ext.App.Db
+	db.AutoMigrate(&FileShareItem{})
+	RegShareFileSpace(ext)
 }

@@ -1,7 +1,7 @@
 // Extensions相关工具
 
 import { useOfficialStore } from 'miknas/exts/Official/stores/official';
-import { MikCall } from './official_utils';
+import { MikCall, gutil } from './official_utils';
 
 class Extension {
 
@@ -23,9 +23,13 @@ class Extension {
     return useOfficialStore().canAccess(this.id, resid);
   }
 
-  serverUrl(extsSubUrl, param) {
+  serverUrl(extsSubUrl, param, isfull) {
     let url = useOfficialStore().mdServerUrl(`${this.id}/${extsSubUrl}`);
-    return MikCall.genUrlWithParam(url, param);
+    let href = MikCall.genUrlWithParam(url, param);
+    if (isfull) {
+      return gutil.genFullUrl(href);
+    }
+    return href
   }
 
   mcpost(extsSubUrl, postData, extraConf) {

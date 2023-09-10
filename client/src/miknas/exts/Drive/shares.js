@@ -17,3 +17,4 @@ export { default as usePreviewView } from './helpers/usePreviewView';
 
 export { default as MdcDriveAliveView } from './components/MdcDriveAliveView.vue';
 export { default as CommonExplorerPage } from './pages/CommonExplorerPage.vue';
+export { default as MySharesPage } from './pages/MyShares.vue';

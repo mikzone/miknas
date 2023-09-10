@@ -42,12 +42,22 @@ export class DataRule {
     let suc = DataRule.isString(val) === true && DataRule.notEmpty(val);
     return suc || '必须是非空字符串';
   }
-  static minLenght(minLength) {
+  static minLength(needVal) {
     return function (val) {
       let check1 = DataRule.isString(val);
       if (check1 !== true) return check1;
-      if (val.length < minLength) {
-        return `长度不能小于${minLength}`;
+      if (val.length < needVal) {
+        return `长度不能小于${needVal}`;
+      }
+      return true;
+    }
+  }
+  static maxLength(needVal) {
+    return function (val) {
+      let check1 = DataRule.isString(val);
+      if (check1 !== true) return check1;
+      if (val.length > needVal) {
+        return `长度不能大于${needVal}`;
       }
       return true;
     }

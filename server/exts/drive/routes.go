@@ -8,44 +8,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	getFolderSize "github.com/markthree/go-get-folder-size/src"
 	"github.com/mikzone/miknas/server/miknas"
-	cp "github.com/otiai10/copy"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
-
-type FileClientInfo struct {
-	Name   string `json:"name"`
-	IsFile bool   `json:"isFile"`
-	Size   int64  `json:"size"`
-	Modify int64  `json:"modify"`
-}
-
-func GetFileClientInfo(fullpath string, withFolderSize bool) (*FileClientInfo, error) {
-	fileInfo, err := os.Stat(fullpath)
-	if err != nil {
-		return nil, err
-	}
-	isDir := fileInfo.IsDir()
-	fsize := fileInfo.Size()
-	if isDir {
-		fsize = 0
-		if withFolderSize {
-			size, err := getFolderSize.Parallel(fullpath)
-			if err != nil {
-				fmt.Printf("GetFileSizeErr: %v", err)
-			}
-			fsize = size
-		}
-	}
-	clientInfo := FileClientInfo{
-		Name:   fileInfo.Name(),
-		IsFile: !isDir,
-		Size:   fsize,
-		Modify: fileInfo.ModTime().Unix(),
-	}
-	return &clientInfo, nil
-}
 
 type inDataFsLocate struct {
 	Fsid   string `json:"fsid" form:"fsid" binding:"required"`
@@ -70,42 +35,39 @@ type inDataFsThumb struct {
 	MaxSize uint   `json:"maxSize" form:"maxSize" binding:"required"`
 }
 
+type inDataFsUpload struct {
+	Fsid   string `json:"fsid" form:"fsid" binding:"required"`
+	Fspath string `json:"fspath" form:"fspath"`
+	Name   string `json:"name" form:"name" binding:"required"`
+}
+
 func listFiles(ch *miknas.ContextHelper) {
 	var loc inDataFsLocate
 	ch.BindJSON(&loc)
-	fs := ch.OpenFs(loc.Fsid, "r")
-	fullpath := fs.MustAbs(loc.Fspath)
-	files, err := os.ReadDir(fullpath)
-	if err != nil {
-		ch.FailResp(err.Error())
-		// ch.FailResp("读取目录失败")
-		return
-	}
-	fileInfos := []FileClientInfo{}
-	for _, file := range files {
-		newfullpath := filepath.Join(fullpath, file.Name())
-		fCInfo, _ := GetFileClientInfo(newfullpath, true)
-		if fCInfo != nil {
-			fileInfos = append(fileInfos, *fCInfo)
-		}
+	fsd := ch.OpenFs(loc.Fsid, "r")
+	needDirSize := ch.GetApp().ConfMgr.Get("MIKNAS_DRIVE_NEED_DIR_SIZE").(string) == "1"
+	fileInfos, err := fsd.ListDir(fsd, loc.Fspath, needDirSize)
+	ch.EnsureNoErr(err)
+	fCInfos := []FileClientInfo{}
+	for _, fInfo := range fileInfos {
+		fCInfo := PackFileClientInfo(fInfo)
+		fCInfos = append(fCInfos, *fCInfo)
 	}
 	ch.SucResp(gin.H{
 		"fspath": loc.Fspath,
-		"files":  fileInfos,
+		"files":  fCInfos,
 	})
 }
 
 func queryFileInfo(ch *miknas.ContextHelper) {
 	var loc inDataFsLocate
 	ch.BindJSON(&loc)
-	fs := ch.OpenFs(loc.Fsid, "r")
-	fullpath := fs.MustAbs(loc.Fspath)
-	fCInfo, err := GetFileClientInfo(fullpath, true)
-	if err != nil {
-		ch.FailResp(err.Error())
-		// ch.FailResp("读取目录失败")
-		return
-	}
+	fsd := ch.OpenFs(loc.Fsid, "r")
+	// 查询文件时不会查询到文件夹大小
+	fInfo, err := fsd.Stat(fsd, loc.Fspath, false)
+	ch.EnsureNoErr(err)
+	fCInfo := PackFileClientInfo(fInfo)
+	ch.EnsureNoErr(err)
 	ch.SucResp(*fCInfo)
 }
 
@@ -113,34 +75,31 @@ func download(ch *miknas.ContextHelper) {
 	c := ch.Ctx
 	fsid := c.Param("fsid")
 	fspath := c.Param("fspath")
-	fs := ch.OpenFs(fsid, "r")
-	fullpath := fs.MustAbs(fspath)
-	EnsureIsExistedFile(fullpath)
-	filename := filepath.Base(fullpath)
-	c.FileAttachment(fullpath, filename)
+	fsd := ch.OpenFs(fsid, "r")
+	EnsureIsExistedFile(fsd, fspath)
+	fsd.WebDownload(fsd, ch, fspath)
 }
 
 func view(ch *miknas.ContextHelper) {
 	c := ch.Ctx
 	fsid := c.Param("fsid")
 	fspath := c.Param("fspath")
-	fs := ch.OpenFs(fsid, "r")
-	fullpath := fs.MustAbs(fspath)
-	EnsureIsExistedFile(fullpath)
-	c.File(fullpath)
+	fsd := ch.OpenFs(fsid, "r")
+	EnsureIsExistedFile(fsd, fspath)
+	fsd.WebDownload(fsd, ch, fspath)
 }
 
 func viewTxt(ch *miknas.ContextHelper) {
 	var loc inDataFsLocate
 	ch.BindJSON(&loc)
-	fs := ch.OpenFs(loc.Fsid, "r")
-	fullpath := fs.MustAbs(loc.Fspath)
-	fInfo := EnsureIsExistedFile(fullpath)
+	fsd := ch.OpenFs(loc.Fsid, "r")
+	fspath := loc.Fspath
+	fInfo := EnsureIsExistedFile(fsd, fspath)
 	if fInfo.Size() > 10<<20 { // 10mb
 		ch.FailResp("文件太大，无法查看")
 		return
 	}
-	data, err := os.ReadFile(fullpath)
+	data, err := fsd.ReadFile(fsd, fspath)
 	if err != nil {
 		ch.FailResp(err.Error())
 		return
@@ -183,26 +142,30 @@ func thumb(ch *miknas.ContextHelper) {
 	c := ch.Ctx
 	fsid := c.Param("fsid")
 	fspath := c.Param("fspath")
-	fs := ch.OpenFs(fsid, "r")
-	fullpath := fs.MustAbs(fspath)
-	EnsureIsExistedFile(fullpath)
-	// c.File(fullpath)
-	ext := CalcExt(fullpath)
+	fsd := ch.OpenFs(fsid, "r")
+	EnsureIsExistedFile(fsd, fspath)
+	ext := CalcExt(fspath)
 	if ext == "svg" {
-		c.File(fullpath)
+		fsd.WebView(fsd, ch, fspath)
 		return
 	}
 	fileType := GetFileType(ext)
 	var srcBuf []byte
 	if fileType == "video" {
-		videoBuf, err := GetSnapshot(fullpath, 10)
+		dfsd, ok := fsd.(miknas.IDiskFsDriver)
+		if !ok {
+			c.AbortWithError(400, fmt.Errorf("缩略图功能暂不支持该文件系统下的视频文件"))
+			return
+		}
+		diskFullpath := dfsd.MustAbs(fspath)
+		videoBuf, err := GetSnapshot(diskFullpath, 10)
 		if err != nil {
 			c.AbortWithError(400, err)
 			return
 		}
 		srcBuf = videoBuf.Bytes()
 	} else if fileType == "img" {
-		imgData, err := os.ReadFile(fullpath)
+		imgData, err := fsd.ReadFile(fsd, fspath)
 		if err != nil {
 			c.AbortWithError(400, err)
 			return
@@ -227,11 +190,9 @@ func genThumb(ch *miknas.ContextHelper) {
 	ch.BindJSON(&loc)
 	fsid := loc.Fsid
 	fspath := loc.Fspath
-	fs := ch.OpenFs(fsid, "r")
-	fullpath := fs.MustAbs(fspath)
-	EnsureIsExistedFile(fullpath)
-	// c.File(fullpath)
-	ext := CalcExt(fullpath)
+	fsd := ch.OpenFs(fsid, "r")
+	EnsureIsExistedFile(fsd, fspath)
+	ext := CalcExt(fspath)
 	if ext == "svg" {
 		ch.FailResp("不支持压缩svg")
 		return
@@ -239,14 +200,20 @@ func genThumb(ch *miknas.ContextHelper) {
 	fileType := GetFileType(ext)
 	var srcBuf []byte
 	if fileType == "video" {
-		videoBuf, err := GetSnapshot(fullpath, 10)
+		dfsd, ok := fsd.(miknas.IDiskFsDriver)
+		if !ok {
+			ch.FailResp("缩略图功能暂不支持该文件系统下的视频文件")
+			return
+		}
+		diskFullpath := dfsd.MustAbs(fspath)
+		videoBuf, err := GetSnapshot(diskFullpath, 10)
 		if err != nil {
 			ch.FailResp("获取视频截图发生错误: %s", err.Error())
 			return
 		}
 		srcBuf = videoBuf.Bytes()
 	} else if fileType == "img" {
-		imgData, err := os.ReadFile(fullpath)
+		imgData, err := fsd.ReadFile(fsd, fspath)
 		if err != nil {
 			ch.FailResp("生成图像截图发生错误: %s", err.Error())
 			return
@@ -264,17 +231,17 @@ func genThumb(ch *miknas.ContextHelper) {
 		return
 	}
 
-	oldFileName := filepath.Base(fullpath)
+	oldFileName := filepath.Base(fspath)
 	newFileName := strings.TrimSuffix(oldFileName, filepath.Ext(oldFileName))
-	toFolder := filepath.Join(filepath.Dir(fullpath), ".mnthumbs")
-	err = os.MkdirAll(toFolder, 0750)
+	toFolder := filepath.Join(filepath.Dir(fspath), ".mnthumbs")
+	err = fsd.MkdirAll(fsd, toFolder)
 	if err != nil && !os.IsExist(err) {
 		ch.FailResp("创建.mnthumbs目录失败: %s", err.Error())
 		return
 	}
 	toPath := filepath.Join(toFolder, newFileName+newFileExt)
 
-	ferr := os.WriteFile(toPath, newImage, 0644)
+	ferr := fsd.WriteFile(fsd, toPath, newImage)
 	if ferr != nil {
 		ch.FailResp("创建生成文件失败: %s", ferr.Error())
 		return
@@ -282,39 +249,56 @@ func genThumb(ch *miknas.ContextHelper) {
 	ch.SucResp("生成成功")
 }
 
+func precheckUpload(ch *miknas.ContextHelper) {
+	var loc inDataFsUpload
+	ch.BindJSON(&loc)
+	fsid := loc.Fsid
+	fspath := loc.Fspath
+	name := loc.Name
+	fsd := ch.OpenFs(fsid, "w")
+	EnsureIsExistedDir(fsd, fspath)
+	filename := filepath.Base(name)
+	dst := filepath.Join(fspath, filename)
+	EnsureNotExisted(fsd, dst)
+	ch.SucResp(true)
+}
+
 func uploadFiles(ch *miknas.ContextHelper) {
-	ch.SetFailRetStatus(400)
-	var loc inDataFsLocate
-	ch.MustBind(&loc)
-	fs := ch.OpenFs(loc.Fsid, "w")
-	fullpath := fs.MustAbs(loc.Fspath)
-	EnsureIsExistedDir(fullpath)
+	ch.SetFailStatus(400)
+	var loc inDataFsUpload
+	err := ch.Ctx.ShouldBindQuery(&loc)
+	ch.EnsureNoErr(err)
+	fsid := loc.Fsid
+	fspath := loc.Fspath
+	name := loc.Name
+	fsd := ch.OpenFs(fsid, "w")
+	EnsureIsExistedDir(fsd, fspath)
+	filename := filepath.Base(name)
+	dst := filepath.Join(fspath, filename)
+	EnsureNotExisted(fsd, dst)
+
 	c := ch.Ctx
 	form, formErr := c.MultipartForm()
 	if formErr != nil {
-		ch.FailRespWithStatus(400, formErr.Error())
+		ch.FailResp(formErr.Error())
 		return
 	}
 	files := form.File["files"]
 	fileNum := len(files)
 	if fileNum < 1 {
-		ch.FailRespWithStatus(400, "没有携带要上传的文件")
+		ch.FailResp("没有携带要上传的文件")
 		return
 	} else if fileNum > 1 {
-		ch.FailRespWithStatus(400, "不支持同时上传多个文件")
+		ch.FailResp("不支持同时上传多个文件")
 		return
 	}
 
 	for _, file := range files {
-		filename := filepath.Base(file.Filename)
-		if filename == "" {
-			ch.FailRespWithStatus(400, "文件名不能为空")
+		if filename != filepath.Base(file.Filename) {
+			ch.FailResp("请求错误，文件名和请求参数对不上")
 			return
 		}
-		dst := filepath.Join(fullpath, filename)
-		EnsureNotExisted(dst)
-		// Upload the file to specific dst.
-		c.SaveUploadedFile(file, dst)
+		fsd.WebSaveUploadedFile(fsd, ch, file, dst)
 	}
 	ch.SucResp("文件上传成功!")
 }
@@ -322,12 +306,12 @@ func uploadFiles(ch *miknas.ContextHelper) {
 func createFolder(ch *miknas.ContextHelper) {
 	var loc inDataFsLocate
 	ch.BindJSON(&loc)
-	fs := ch.OpenFs(loc.Fsid, "w")
-	fullpath := fs.MustAbs(loc.Fspath)
-	EnsureNotExisted(fullpath)
-	fullDir := filepath.Dir(fullpath)
-	EnsureIsExistedDir(fullDir)
-	err := os.Mkdir(fullpath, 0750)
+	fsd := ch.OpenFs(loc.Fsid, "w")
+	fspath := loc.Fspath
+	EnsureNotExisted(fsd, fspath)
+	fsDir := filepath.Dir(fspath)
+	EnsureIsExistedDir(fsd, fsDir)
+	err := fsd.MkdirAll(fsd, fspath)
 	if err != nil {
 		ch.FailResp(err.Error())
 		return
@@ -338,15 +322,9 @@ func createFolder(ch *miknas.ContextHelper) {
 func removeFile(ch *miknas.ContextHelper) {
 	var loc inDataFsLocate
 	ch.BindJSON(&loc)
-	fs := ch.OpenFs(loc.Fsid, "w")
-	fullpath := fs.MustAbs(loc.Fspath)
-	fInfo := EnsureExisted(fullpath)
-	var err error
-	if fInfo.IsDir() {
-		err = os.RemoveAll(fullpath)
-	} else {
-		err = os.Remove(fullpath)
-	}
+	fsd := ch.OpenFs(loc.Fsid, "w")
+	fspath := loc.Fspath
+	err := fsd.RemoveAll(fsd, fspath)
 	if err != nil {
 		ch.FailResp(err.Error())
 		return
@@ -357,13 +335,13 @@ func removeFile(ch *miknas.ContextHelper) {
 func renameFile(ch *miknas.ContextHelper) {
 	var loc inDataFsRename
 	ch.BindJSON(&loc)
-	fs := ch.OpenFs(loc.Fsid, "w")
-	fullpath := fs.MustAbs(loc.Fspath)
-	EnsureExisted(fullpath)
+	fsd := ch.OpenFs(loc.Fsid, "w")
+	fspath := loc.Fspath
+	EnsureExisted(fsd, fspath)
 	toname := loc.Toname
-	tofullpath := filepath.Join(filepath.Dir(fullpath), toname)
-	EnsureNotExisted(tofullpath)
-	err := os.Rename(fullpath, tofullpath)
+	tofullpath := filepath.Join(filepath.Dir(fspath), toname)
+	EnsureNotExisted(fsd, tofullpath)
+	err := fsd.MoveAll(fsd, fspath, tofullpath)
 	if err != nil {
 		ch.FailResp(err.Error())
 		return
@@ -374,20 +352,19 @@ func renameFile(ch *miknas.ContextHelper) {
 func copyFile(ch *miknas.ContextHelper) {
 	var loc inDataFsWithDest
 	ch.BindJSON(&loc)
-	fs := ch.OpenFs(loc.Fsid, "w")
-	fullpath := fs.MustAbs(loc.Fspath)
-	EnsureExisted(fullpath)
+	fsd := ch.OpenFs(loc.Fsid, "w")
+	fspath := loc.Fspath
+	EnsureExisted(fsd, fspath)
 	topath := loc.Topath
-	tofulldir := fs.MustAbs(topath)
-	EnsureIsExistedDir(tofulldir)
-	tofullpath := filepath.Join(tofulldir, filepath.Base(fullpath))
-	EnsureNotExisted(tofullpath)
-	if strings.HasPrefix(tofullpath, fullpath) {
+	EnsureIsExistedDir(fsd, topath)
+	tofullpath := filepath.Join(topath, filepath.Base(fspath))
+	EnsureNotExisted(fsd, tofullpath)
+	if strings.HasPrefix(tofullpath, fspath) {
 		ch.FailResp("非法操作:不能将目录复制到子目录")
 		return
 	}
 
-	err := cp.Copy(fullpath, tofullpath)
+	err := fsd.CopyAll(fsd, fspath, tofullpath)
 	if err != nil {
 		ch.FailResp(err.Error())
 		return
@@ -398,20 +375,19 @@ func copyFile(ch *miknas.ContextHelper) {
 func mvFile(ch *miknas.ContextHelper) {
 	var loc inDataFsWithDest
 	ch.BindJSON(&loc)
-	fs := ch.OpenFs(loc.Fsid, "w")
-	fullpath := fs.MustAbs(loc.Fspath)
-	EnsureExisted(fullpath)
+	fsd := ch.OpenFs(loc.Fsid, "w")
+	fspath := loc.Fspath
+	EnsureExisted(fsd, fspath)
 	topath := loc.Topath
-	tofulldir := fs.MustAbs(topath)
-	EnsureIsExistedDir(tofulldir)
-	tofullpath := filepath.Join(tofulldir, filepath.Base(fullpath))
-	EnsureNotExisted(tofullpath)
-	if strings.HasPrefix(tofullpath, fullpath) {
+	EnsureIsExistedDir(fsd, topath)
+	tofullpath := filepath.Join(topath, filepath.Base(fspath))
+	EnsureNotExisted(fsd, tofullpath)
+	if strings.HasPrefix(tofullpath, fspath) {
 		ch.FailResp("非法操作:不能将目录移动到子目录")
 		return
 	}
 
-	err := os.Rename(fullpath, tofullpath)
+	err := fsd.MoveAll(fsd, fspath, tofullpath)
 	if err != nil {
 		ch.FailResp(err.Error())
 		return
@@ -427,6 +403,7 @@ func regRoutes(ext *MikNasExt) {
 	ext.GET("/thumb/:fsid/*fspath", miknas.UseReqPool("drive/thumb", 1), thumb)
 	ext.POST("/genThumb", miknas.UseReqPool("drive/genThumb", 1), genThumb)
 	ext.POST("/viewTxt", viewTxt)
+	ext.POST("/precheckUpload", precheckUpload)
 	ext.POST("/uploadFiles", uploadFiles)
 	ext.POST("/createFolder", createFolder)
 	ext.POST("/removeFile", removeFile)

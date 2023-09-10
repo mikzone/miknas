@@ -94,7 +94,7 @@ func addFolder(ch *miknas.ContextHelper) {
 	}
 	db.Create(folder)
 	info := PackNoteFolder(folder)
-	ch.UsLog("addFolder", info)
+	ch.UsLog("addFolder", "folder", folder)
 	ch.SucResp(info)
 }
 
@@ -145,7 +145,7 @@ func modifyFolder(ch *miknas.ContextHelper) {
 	result := db.Model(folder).Updates(modifyInfo)
 	ch.EnsureNoErr(result.Error)
 	info := PackNoteFolder(folder)
-	ch.UsLog("modifyFolder", info)
+	ch.UsLog("modifyFolder", "folder", folder)
 	ch.SucResp(info)
 }
 
@@ -185,10 +185,9 @@ func deleteFolder(ch *miknas.ContextHelper) {
 		return
 	}
 
-	info := PackNoteFolder(folder)
 	result := db.Delete(&folder)
 	ch.EnsureNoErr(result.Error)
-	ch.UsLog("deleteFolder", info)
+	ch.UsLog("deleteFolder", "folder", folder)
 	ch.SucResp(result.RowsAffected)
 }
 

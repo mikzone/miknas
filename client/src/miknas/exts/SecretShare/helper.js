@@ -84,7 +84,7 @@ export async function createNewSecret(initData) {
   if (!isOk) return;
   let { content, pwd, ...others } = secretObj;
   let myaes = new MyAes(pwd);
-  let newTxt = myaes.encrypt(content);
+  let newTxt = myaes.encryptEx(content);
   if (!newTxt) {
     MikCall.sendErrorTips('加密过程发生错误');
     return;
@@ -110,9 +110,9 @@ async function decrpytSecret(secretObj, canRetry) {
   }
 
   let myaes = new MyAes(mypwd);
-  let decrpytMsg = myaes.decrypt(secretObj.txt);
+  let [decrpytMsg, decryptErr] = myaes.decryptEx(secretObj.txt);
   if (!decrpytMsg) {
-    MikCall.sendErrorTips('密码不正确!');
+    MikCall.sendErrorTips(decryptErr);
     if (canRetry) return await decrpytSecret(secretObj, canRetry);
     else return;
   }
@@ -133,7 +133,7 @@ export async function modifySecret(decryptData) {
   if (!isOk) return;
   let { content, pwd, ...others } = secretObj;
   let myaes = new MyAes(pwd);
-  let newTxt = myaes.encrypt(content);
+  let newTxt = myaes.encryptEx(content);
   if (!newTxt) {
     MikCall.sendErrorTips('加密过程发生错误');
     return await modifySecret(secretObj);

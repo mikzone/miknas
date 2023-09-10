@@ -22,12 +22,18 @@ export const useExtension = defineExtension({
   route: (extsObj) => {
     // const extsObj = useExtension();
     return {
+      component: () => import('./layouts/CustomLayout.vue'),
       children: [
         {
           path: '',
           name: extsObj.routeName('Index'),
           // redirect: extsObj.routePath('pan'),
           redirect: {name : extsObj.routeName('pan') },
+        },
+        {
+          path: 'shares',
+          name: extsObj.routeName('shares'),
+          component: () => import('../Drive/shares').then((module)=>module['MySharesPage']),
         },
         {
           path: 'view/:routeSubPath(.*)?',

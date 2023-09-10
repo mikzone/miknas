@@ -32,7 +32,7 @@ func (ext *MikNasExt) OnBind() {
 func (ext *MikNasExt) OnInit() {
 	// only in init, you can access db, workspace, loaded configs
 	// you can register your filespace, init your db here
-	ext.App.Log("[%s]NewJobMgr: cap: %v\n", ext.GetId(), ext.JmInst.Pool.Cap())
+	ext.Logger().Info("CreatedJobMgr", "Cap", ext.JmInst.Pool.Cap())
 	go func() {
 		for {
 			time.Sleep(1 * time.Second)

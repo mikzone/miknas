@@ -20,6 +20,7 @@
       <q-separator />
       <q-card-actions>
         <q-tabs
+          v-if="props.showSwitch"
           v-model="state.mode"
           align="left"
           dense
@@ -65,11 +66,19 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  mode : {
+    type: String,
+    default: 'md',
+  },
+  showSwitch: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const state = reactive({
   isRaw: true,
-  mode: 'raw',
+  mode: props.mode,
 });
 
 function onCloseDlg() {

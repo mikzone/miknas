@@ -35,7 +35,7 @@ func addBookmark(ch *miknas.ContextHelper) {
 	}
 	db.Create(bm)
 	info := PackBookmarkInfo(bm)
-	ch.UsLog("addBookmark", info)
+	ch.UsLog("addBookmark", "bm", bm)
 	ch.SucResp(info)
 }
 
@@ -61,7 +61,7 @@ func modifyBookmark(ch *miknas.ContextHelper) {
 		Icon: loc.Icon,
 	})
 	info := PackBookmarkInfo(bm)
-	ch.UsLog("modifyBookmarks", info)
+	ch.UsLog("modifyBookmarks", "bm", bm)
 	ch.SucResp(info)
 }
 
@@ -80,13 +80,12 @@ func deleteBookmark(ch *miknas.ContextHelper) {
 		ch.FailResp("不是你的书签")
 		return
 	}
-	info := PackBookmarkInfo(bm)
 	result := db.Delete(&bm)
 	if result.Error != nil {
 		ch.FailResp(result.Error.Error())
 		return
 	}
-	ch.UsLog("deleteBookmarks", info)
+	ch.UsLog("deleteBookmarks", "bm", bm)
 	ch.SucResp(result.RowsAffected)
 }
 

@@ -2,14 +2,15 @@ package miknas
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"path"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/xid"
 )
 
 type ContextHelper struct {
@@ -43,7 +44,11 @@ func (ch *ContextHelper) SucResp(ret any) {
 
 func (ch *ContextHelper) FailResp(format string, a ...any) {
 	why := fmt.Sprintf(format, a...)
-	ch.Ctx.JSON(http.StatusOK, gin.H{
+	status := ch.Ctx.GetInt(ctxFailStatusKey)
+	if status == 0 {
+		status = http.StatusOK
+	}
+	ch.Ctx.JSON(status, gin.H{
 		"suc": false,
 		"why": why,
 	})
@@ -57,10 +62,10 @@ func (ch *ContextHelper) FailRespWithStatus(status int, format string, a ...any)
 	})
 }
 
-const ctxFailRetStatusKey = "miknasFailretStatus"
+const ctxFailStatusKey = "miknasFailStatus"
 
-func (ch *ContextHelper) SetFailRetStatus(status int) {
-	ch.Ctx.Set(ctxFailRetStatusKey, status)
+func (ch *ContextHelper) SetFailStatus(status int) {
+	ch.Ctx.Set(ctxFailStatusKey, status)
 }
 
 func (ch *ContextHelper) Redirect(location string) {
@@ -78,7 +83,7 @@ func (ch *ContextHelper) Jump(message, jumpurl string, cd int, flag bool) {
 	err := tplTemplate.ExecuteTemplate(ch.Ctx.Writer, "jump.html", H{
 		"SERVER_TEMPLATE_DATA": obj,
 	})
-	if err == nil {
+	if err != nil {
 		fmt.Printf("Jump Render err: %v", err)
 	}
 }
@@ -113,7 +118,25 @@ func (ch *ContextHelper) GetUserAuth() IUserAuth {
 }
 
 func (ch *ContextHelper) GetSession() sessions.Session {
-	return sessions.Default(ch.Ctx)
+	return sessions.DefaultMany(ch.Ctx, ctxSessionNameUserKey)
+}
+
+func (ch *ContextHelper) GetFixSession() sessions.Session {
+	return sessions.DefaultMany(ch.Ctx, ctxSessionNameFixKey)
+}
+
+func (ch *ContextHelper) GetSessionId() string {
+	// 获取sessionid
+	session := ch.GetFixSession()
+	sid := session.Get("Sid")
+	if sid == nil {
+		guid := xid.New()
+		newSid := guid.String()
+		session.Set("Sid", newSid)
+		sid = session.Get("Sid")
+		session.Save()
+	}
+	return AnyToStr(sid)
 }
 
 func (ch *ContextHelper) ClientUrl(suburl string) string {
@@ -133,36 +156,23 @@ func (ch *ContextHelper) Ensure(resid AuthResId) {
 	}
 }
 
-func (ch *ContextHelper) OpenFs(fsid string, mode string) IPathHelper {
+func (ch *ContextHelper) OpenFs(fsid string, mode string) IFsDriver {
 	app := ch.GetApp()
-	fsType, fsSubid := DecomposeFsid(fsid)
-	filespace, exist := app.FileSpaces[fsType]
+	fstype, fssubid := DecomposeFsid(fsid)
+	filespace, exist := app.FileSpaces[fstype]
 	if !exist {
-		panic(NewFailRet("FsType(%s) not found", fsType))
+		panic(NewFailRet("Fstype(%s) not found", fstype))
 	}
 	filespace.Ensure(ch, mode)
-	rootPath := filespace.GetSubRoot(ch, fsSubid)
-	if rootPath == "" {
-		panic(NewFailRet("rootPath of fsid(%s) cannot be empty", fsid))
-	}
-	return &BasePathHelper{rootPath: rootPath}
+	return filespace.NewFsDriver(ch, fssubid)
 }
 
-func (ch *ContextHelper) UsLog(action string, v H) {
-	app := ch.GetApp()
-	ext, exists := ch.Ctx.Get(ctxExtKey)
-	vBytes, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-	}
-	vStr := string(vBytes)
-	if exists {
-		ext = ext.(IExtension)
-		extid := ch.GetRelExt().GetId()
-		app.UsLogger.Printf("[miknas|%s]%s: %s", extid, action, vStr)
-		return
-	}
-	app.UsLogger.Printf("[miknas]%s: %s", action, vStr)
+func (ch *ContextHelper) UsLog(msg string, args ...any) {
+	ch.GetRelExt().GetLogger("us").Info(msg, args...)
+}
+
+func (ch *ContextHelper) Logger() *slog.Logger {
+	return ch.GetRelExt().Logger()
 }
 
 func MakeCtxHelper(c *gin.Context) *ContextHelper {

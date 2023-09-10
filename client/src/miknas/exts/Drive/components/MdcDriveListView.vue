@@ -76,20 +76,22 @@
                 <q-item-section avatar class="mn-item-icon">
                   <q-icon name="refresh" />
                 </q-item-section>
-                <q-item-section>刷新</q-item-section>
+                <q-item-section>刷新当前目录</q-item-section>
               </q-item>
-              <q-item v-close-popup clickable @click="fileOp.newFolder">
-                <q-item-section avatar class="mn-item-icon">
-                  <q-icon name="create_new_folder" />
-                </q-item-section>
-                <q-item-section>新建目录</q-item-section>
-              </q-item>
-              <q-item v-close-popup clickable @click="fileOp.openUploadDlg">
-                <q-item-section avatar class="mn-item-icon">
-                  <q-icon name="cloud" />
-                </q-item-section>
-                <q-item-section>上传文件到此处</q-item-section>
-              </q-item>
+              <template v-if="!fileGetter.isReadOnly.value">
+                <q-item v-close-popup clickable @click="fileOp.newFolder">
+                  <q-item-section avatar class="mn-item-icon">
+                    <q-icon name="create_new_folder" />
+                  </q-item-section>
+                  <q-item-section>新建目录</q-item-section>
+                </q-item>
+                <q-item v-close-popup clickable @click="fileOp.openUploadDlg">
+                  <q-item-section avatar class="mn-item-icon">
+                    <q-icon name="cloud" />
+                  </q-item-section>
+                  <q-item-section>上传文件到此处</q-item-section>
+                </q-item>
+              </template>
             </q-list>
           </q-menu>
         </q-btn>
@@ -110,9 +112,12 @@
           <q-item-label class="mn-word-break-all" :lines="2">{{
             fileInfo.name
           }}</q-item-label>
-          <q-item-label caption
-            >{{ fileInfo.viewSize }} | {{ fileInfo.viewModify }}</q-item-label
-          >
+          <q-item-label caption>
+            <template v-if="fileInfo.viewSize">
+              {{ fileInfo.viewSize }} |
+            </template>
+            {{ fileInfo.viewModify }}
+          </q-item-label>
         </q-item-section>
         <q-item-section side>
           <mdc-file-more-action
@@ -203,10 +208,12 @@
                 <q-item-label class="mn-word-break-all" :lines="2">{{
                   fileInfo.name
                 }}</q-item-label>
-                <q-item-label caption
-                  >{{ fileInfo.viewSize }} |
-                  {{ fileInfo.viewModify }}</q-item-label
-                >
+                <q-item-label caption>
+                  <template v-if="fileInfo.viewSize">
+                    {{ fileInfo.viewSize }} |
+                  </template>
+                  {{ fileInfo.viewModify }}
+                </q-item-label>
               </q-item-section>
               <q-item-section side>
                 <mdc-file-more-action

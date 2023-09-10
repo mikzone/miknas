@@ -56,7 +56,7 @@ const attachConf = computed(()=>{
 async function viewSecret() {
   let formData = await attachConf.value.genFormData(props.attachInfo.jsonData);
   if (formData) {
-    openTextCopyDlg({ title: '加密内容如下:', txt: formData.txt });
+    openTextCopyDlg({ title: '加密内容如下:', txt: formData.txt, showSwitch: true });
   }
 }
 

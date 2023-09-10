@@ -81,10 +81,7 @@ func tryLoginWithUser(ch *miknas.ContextHelper, uid, pwd string, why string) err
 	session.Set("uid", uid)
 	session.Set("role", role)
 	session.Save()
-	ch.UsLog("login", miknas.H{
-		"uid": uid,
-		"why": why,
-	})
+	ch.UsLog("login", "uid", uid, "why", why)
 	return nil
 }
 
@@ -184,6 +181,7 @@ func register(ch *miknas.ContextHelper) {
 		Role: role,
 	}
 	app.Db.Create(&newUser)
+	ch.UsLog("NewUser", "user", newUser)
 	err := tryLoginWithUser(ch, uid, pwd, "register")
 	if err != nil {
 		jumpLoginWithMsg(ch, err.Error())
@@ -240,6 +238,7 @@ func modifyUserRole(ch *miknas.ContextHelper) {
 		ch.FailResp(result.Error.Error())
 		return
 	}
+	ch.UsLog("modifyUser", "user", user)
 	ch.SucResp(result.RowsAffected)
 }
 
@@ -262,6 +261,7 @@ func removeUser(ch *miknas.ContextHelper) {
 		ch.FailResp(result.Error.Error())
 		return
 	}
+	ch.UsLog("removeUser", "user", user)
 	ch.SucResp(result.RowsAffected)
 }
 
@@ -308,6 +308,7 @@ func modifyNickname(ch *miknas.ContextHelper) {
 		ch.FailResp(result.Error.Error())
 		return
 	}
+	ch.UsLog("modifyUser", "user", user)
 	ch.SucResp(result.RowsAffected)
 }
 

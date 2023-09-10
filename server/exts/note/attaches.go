@@ -80,7 +80,7 @@ func addAttach(ch *miknas.ContextHelper) {
 	}
 	db.Create(attach)
 	info := PackNoteAttach(attach)
-	ch.UsLog("addAttach", info)
+	ch.UsLog("addAttach", "attach", attach)
 	ch.SucResp(info)
 }
 
@@ -118,7 +118,7 @@ func modifyAttach(ch *miknas.ContextHelper) {
 	})
 	ch.EnsureNoErr(result.Error)
 	info := PackNoteAttach(attach)
-	ch.UsLog("modifyAttach", info)
+	ch.UsLog("modifyAttach", "attach", attach)
 	ch.SucResp(info)
 }
 
@@ -138,10 +138,9 @@ func deleteAttach(ch *miknas.ContextHelper) {
 		return
 	}
 
-	info := PackNoteAttach(attach)
 	result := db.Delete(&attach)
 	ch.EnsureNoErr(result.Error)
-	ch.UsLog("deleteAttach", info)
+	ch.UsLog("deleteAttach", "attach", attach)
 	ch.SucResp(result.RowsAffected)
 }
 

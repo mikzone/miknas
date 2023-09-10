@@ -7,12 +7,18 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
+	"runtime/debug"
 	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panjf2000/ants/v2"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type H map[string]any
@@ -164,8 +170,9 @@ func AnyToStr(s any) string {
 var mRequestPool map[string]*ants.PoolWithFunc
 
 type mReqPoolArgs struct {
-	Ch *ContextHelper
-	Wg *sync.WaitGroup
+	Ch    *ContextHelper
+	Wg    *sync.WaitGroup
+	Panic any
 }
 
 func getReqPool(key string, cap int) *ants.PoolWithFunc {
@@ -175,7 +182,16 @@ func getReqPool(key string, cap int) *ants.PoolWithFunc {
 	}
 	pool, err := ants.NewPoolWithFunc(cap, func(i interface{}) {
 		pa := i.(*mReqPoolArgs)
-		defer pa.Wg.Done()
+		defer func() {
+			if p := recover(); p != nil {
+				pa.Panic = p
+				_, ok := p.(IFailRet)
+				if !ok {
+					pa.Ch.Logger().Error("PanicInRequestPool", "panic", p, "stack", string(debug.Stack()))
+				}
+			}
+			pa.Wg.Done()
+		}()
 		ch := pa.Ch
 		if cerr := ch.Ctx.Request.Context().Err(); cerr != nil {
 			ch.Ctx.Abort()
@@ -206,7 +222,42 @@ func UseReqPool(key string, cap int) HandlerFunc {
 			panic(err)
 		}
 		wg.Wait()
+		if args.Panic != nil {
+			ch.Ctx.AbortWithStatus(http.StatusInternalServerError)
+		}
 	}
+}
+
+func newLogFileWriter(app *App, name string) (io.Writer, error) {
+	logDir := app.WorkSpace.MustAbs("log")
+	err := os.MkdirAll(logDir, 0750)
+	if err != nil {
+		return nil, err
+	}
+	fileName := name + ".log"
+	fullpath := filepath.Join(logDir, fileName)
+	r := &lumberjack.Logger{
+		Filename:   fullpath,
+		LocalTime:  true,
+		MaxSize:    50,
+		MaxBackups: 5,
+	}
+	return r, nil
+}
+
+func CreateSlogLogger(app *App, name string, withConsole bool) *slog.Logger {
+	logFileWriter, err := newLogFileWriter(app, name)
+	if err != nil {
+		panic(NewFailRet("无法初始化%s日志", name))
+	}
+	var writer io.Writer
+	if withConsole {
+		writer = io.MultiWriter(logFileWriter, os.Stderr)
+	} else {
+		writer = logFileWriter
+	}
+	logger := slog.New(slog.NewJSONHandler(writer, nil))
+	return logger
 }
 
 func init() {

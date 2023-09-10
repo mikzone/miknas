@@ -9,7 +9,7 @@ type PrimaryUintModel struct {
 }
 
 type PrimaryStringModel struct {
-	ID        string `gorm:"primarykey"`
+	Sid       string `gorm:"primarykey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

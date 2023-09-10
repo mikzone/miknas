@@ -26,7 +26,8 @@ export const attachCfgs = {
         let [isOk, pwd] = await MikCall.coMakePrompt(
           `提示: ${jsonData.hint || '无'}`,
           '',
-          '请先输入解密密码'
+          '请先输入解密密码',
+          'password'
         );
         if (!isOk) {
           return;
@@ -36,9 +37,9 @@ export const attachCfgs = {
           return;
         }
         let myaes = new MyAes(pwd);
-        let decrpytMsg = myaes.decrypt(jsonData.encrypt);
+        let [decrpytMsg, decryptErr] = myaes.decryptEx(jsonData.encrypt);
         if (!decrpytMsg) {
-          MikCall.sendErrorTips('密码不正确!');
+          MikCall.sendErrorTips(decryptErr);
           return;
         }
         ret.pwd = pwd;
@@ -57,7 +58,7 @@ export const attachCfgs = {
       };
       if (formData.txt) {
         let myaes = new MyAes(formData.pwd);
-        let newTxt = myaes.encrypt(formData.txt);
+        let newTxt = myaes.encryptEx(formData.txt);
         if (!newTxt) {
           MikCall.sendErrorTips('加密过程发生错误');
           return;

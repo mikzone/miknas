@@ -9,11 +9,12 @@
       <q-card-section class="q-pa-none">
         <q-uploader
           style="width: 100%"
-          :factory="factoryFn"
+          :factory="props.factory"
           multiple
           auto-upload
           field-name="files"
           @failed="onUploadFailed"
+          @factory-failed="onFactoryFailed"
           @uploading="onStartUploading"
           @uploaded="onUploaded"
         >
@@ -174,8 +175,8 @@ import { MikCall } from 'miknas/utils';
 import { ref } from 'vue';
 
 const props = defineProps({
-  factoryInfo: {
-    type: Object,
+  factory: {
+    type: Function,
     required: true,
   },
 });
@@ -217,10 +218,6 @@ function onCloseClick(queuedFilesNum) {
   }
 }
 
-function factoryFn() {
-  return props.factoryInfo;
-}
-
 function onUploadFailed(info) {
   let { files, xhr } = info;
   try {
@@ -230,7 +227,13 @@ function onUploadFailed(info) {
       ret = JSON.parse(ret);
       errMsg = ret.why;
     } catch (error) {
-      console.warn(files, xhr, error);
+      if (!xhr.getAllResponseHeaders()) {
+        errMsg = '请求被中断'
+      }
+      else {
+        errMsg = '请求发生异常'
+        console.warn(files, xhr, error);
+      }
     }
 
     MikCall.sendErrorTips(errMsg);
@@ -238,6 +241,11 @@ function onUploadFailed(info) {
   } catch (error) {
     console.warn(files, xhr, error);
   }
+}
+
+function onFactoryFailed(err, files) {
+  let errMsg = `${err}`;
+  for (let file of files) file.__mderr = errMsg;
 }
 
 function onUploaded(info) {

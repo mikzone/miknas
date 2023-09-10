@@ -10,8 +10,7 @@
   >
     <q-card style="width: 1200px; max-width: 90vw">
       <q-card-section class="q-pa-sm row items-center text-white bg-secondary">
-        <div class="text-h6">{{ props.title }}</div>
-        <q-space></q-space>
+        <div class="col text-h6 mn-word-break-all">{{ props.title }}</div>
         <q-btn icon="close" no-caps flat round dense @click="onCloseDlg"></q-btn>
       </q-card-section>
       <q-card-section style="max-height: calc(100vh - 115px); overflow: auto">
