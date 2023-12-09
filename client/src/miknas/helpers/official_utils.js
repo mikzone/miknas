@@ -410,3 +410,47 @@ export const MikCall = {
     });
   },
 };
+
+
+export class MaxCntLocker {
+  constructor(maxCnt) {
+    this.maxCnt = maxCnt;
+    this.cbs = {};
+    this.running = [];
+    this.waiting = [];
+    this.genId = 0;
+  }
+
+  poll(){
+    while (this.running.length < this.maxCnt) {
+      let lockId = this.waiting.shift();
+      if (!lockId) return;
+      // console.log('handle', lockId);
+      let cb = this.cbs[lockId];
+      if (cb) cb();
+    }
+  }
+
+  acquire(){
+    return new Promise((resovle) => {
+      let lockId = this.genId + 1;
+      // console.log('acquire', lockId);
+      this.genId = lockId;
+      let cb = () => {
+        this.running.push(lockId);
+        resovle(lockId);
+      }
+      this.cbs[lockId] = cb;
+      this.waiting.push(lockId);
+      this.poll();
+    });
+  }
+
+  release(lockId){
+    if (!lockId) return;
+    // console.log('release', lockId);
+    delete this.cbs[lockId];
+    this.running = this.running.filter(item => item !== lockId);
+    this.poll();
+  }
+}

@@ -1,6 +1,7 @@
 package miknas
 
 import (
+	"fmt"
 	"io/fs"
 	"mime/multipart"
 	"os"
@@ -164,7 +165,20 @@ func (*BaseFsDriver) MoveAll(self IFsDriver, fspath string, toFspath string) err
 	fsd := self.(IDiskFsDriver)
 	fullpath := fsd.MustAbs(fspath)
 	toFullpath := fsd.MustAbs(toFspath)
-	return os.Rename(fullpath, toFullpath)
+	err := os.Rename(fullpath, toFullpath)
+	if err == nil {
+		return nil
+	}
+	// 重命名失败的话,尝试复制和删除
+	err2 := fsd.CopyAll(self, fspath, toFspath)
+	if err2 != nil {
+		return fmt.Errorf("ErrInCopy: %v", err2)
+	}
+	err3 := fsd.RemoveAll(self, fspath)
+	if err3 != nil {
+		return fmt.Errorf("ErrInRemove: %v", err3)
+	}
+	return nil
 }
 
 func (*BaseFsDriver) CopyAll(self IFsDriver, fspath string, toFspath string) error {

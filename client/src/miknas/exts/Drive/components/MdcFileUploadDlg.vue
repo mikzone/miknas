@@ -9,11 +9,13 @@
       <q-card-section class="q-pa-none">
         <q-uploader
           style="width: 100%"
-          :factory="props.factory"
+          class="no-uploader-overlay"
+          :factory="factoryFn"
           multiple
           auto-upload
           field-name="files"
           @failed="onUploadFailed"
+          @removed="onRemoveFiles"
           @factory-failed="onFactoryFailed"
           @uploading="onStartUploading"
           @uploaded="onUploaded"
@@ -171,7 +173,7 @@
 
 <script setup>
 import { Dialog, useDialogPluginComponent } from 'quasar';
-import { MikCall } from 'miknas/utils';
+import { MaxCntLocker, MikCall } from 'miknas/utils';
 import { ref } from 'vue';
 
 const props = defineProps({
@@ -179,7 +181,19 @@ const props = defineProps({
     type: Function,
     required: true,
   },
+  maxRunningCnt: {
+    type: Number,
+    default: 2,
+  },
 });
+
+const mylocker = new MaxCntLocker(props.maxRunningCnt);
+
+function releaseFilesLock(files) {
+  let curFile = files[0];
+  let lockId = curFile.__mdlockid;
+  mylocker.release(lockId);
+}
 
 defineEmits([
   // REQUIRED; need to specify some events that your
@@ -218,6 +232,16 @@ function onCloseClick(queuedFilesNum) {
   }
 }
 
+async function factoryFn(files) {
+  if (files.length != 1) {
+    throw '只能上传单个文件'
+  }
+  let curFile = files[0];
+  let lockId = await mylocker.acquire();
+  curFile.__mdlockid = lockId;
+  return await props.factory(files);
+}
+
 function onUploadFailed(info) {
   let { files, xhr } = info;
   try {
@@ -237,6 +261,7 @@ function onUploadFailed(info) {
     }
 
     MikCall.sendErrorTips(errMsg);
+    releaseFilesLock(files);
     for (let file of files) file.__mderr = errMsg;
   } catch (error) {
     console.warn(files, xhr, error);
@@ -246,11 +271,17 @@ function onUploadFailed(info) {
 function onFactoryFailed(err, files) {
   let errMsg = `${err}`;
   for (let file of files) file.__mderr = errMsg;
+  releaseFilesLock(files);
+}
+
+function onRemoveFiles(files) {
+  releaseFilesLock(files);
 }
 
 function onUploaded(info) {
   let { files } = info;
   sucCount.value += files.length;
+  releaseFilesLock(files);
 }
 
 function onStartUploading(info) {
@@ -259,4 +290,8 @@ function onStartUploading(info) {
 }
 
 </script>
-<style scoped></style>
+<style>
+.no-uploader-overlay .q-uploader__overlay {
+  display: none;
+}
+</style>
