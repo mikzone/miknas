@@ -4,7 +4,7 @@ set -e
 cd ../../client
 pwd
 set -x
-quasar build
+yarn quasar build
 set +x
 
 echo

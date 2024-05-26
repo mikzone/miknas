@@ -9,8 +9,6 @@ import (
 	"strings"
 
 	cp "github.com/otiai10/copy"
-
-	getFolderSize "github.com/markthree/go-get-folder-size/src"
 )
 
 type IFsDriver interface {
@@ -73,7 +71,7 @@ func (fsh *BaseFsDriver) MustRel(fullpath string) string {
 func (*BaseFsDriver) CalcDirSize(self IFsDriver, fspath string) (int64, error) {
 	fsd := self.(IDiskFsDriver)
 	fullpath := fsd.MustAbs(fspath)
-	return getFolderSize.Parallel(fullpath)
+	return LooseCalcFolderSize(fullpath), nil
 }
 
 // 读取某个文件

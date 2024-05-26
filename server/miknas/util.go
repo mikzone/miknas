@@ -12,9 +12,11 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panjf2000/ants/v2"
@@ -260,6 +262,77 @@ func CreateSlogLogger(app *App, name string, withConsole bool) *slog.Logger {
 	return logger
 }
 
+var mCalcFileSizePool *ants.Pool
+var mCalcFolderSizePool *ants.Pool
+
+type mTypeCaclFolderSizeEnv struct {
+	Size int64
+	Wg   sync.WaitGroup
+}
+
+func _LooseCalcFolderSize(folder string, env *mTypeCaclFolderSizeEnv) {
+	entrys, err := os.ReadDir(folder)
+	if err != nil {
+		return
+	}
+	entrysLen := len(entrys)
+	if entrysLen == 0 {
+		return
+	}
+	for i := 0; i < entrysLen; i++ {
+		entry := entrys[i]
+		if !entry.IsDir() {
+			env.Wg.Add(1)
+			mCalcFileSizePool.Submit(func() {
+				defer env.Wg.Done()
+				info, err := entry.Info()
+				if err != nil {
+					return
+				}
+				atomic.AddInt64(&env.Size, info.Size())
+			})
+		}
+	}
+	// 先遍历文件再遍历文件夹主要是减少goroutine的数量
+	for i := 0; i < entrysLen; i++ {
+		entry := entrys[i]
+		if entry.IsDir() {
+			env.Wg.Add(1)
+			err := mCalcFolderSizePool.Submit(func() {
+				defer env.Wg.Done()
+				_LooseCalcFolderSize(path.Join(folder, entry.Name()), env)
+			})
+			if err != nil {
+				func() {
+					defer env.Wg.Done()
+					_LooseCalcFolderSize(path.Join(folder, entry.Name()), env)
+				}()
+			}
+		}
+	}
+}
+
+func LooseCalcFolderSize(folder string) int64 {
+	// from: https://github.com/markthree/go-get-folder-size/blob/main/src/core.go
+	// and use ants
+	env := &mTypeCaclFolderSizeEnv{
+		Size: int64(0),
+	}
+	_LooseCalcFolderSize(folder, env)
+	env.Wg.Wait()
+	return env.Size
+}
+
 func init() {
 	mRequestPool = map[string]*ants.PoolWithFunc{}
+	var err1 error
+	mCalcFileSizePool, err1 = ants.NewPool(100, ants.WithNonblocking(false))
+	if err1 != nil {
+		panic(err1)
+	}
+	// 文件夹的会在递归中submit，必须用nonblocking来避免阻塞
+	mCalcFolderSizePool, err1 = ants.NewPool(100, ants.WithNonblocking(true))
+	if err1 != nil {
+		panic(err1)
+	}
 }

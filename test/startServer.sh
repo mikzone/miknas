@@ -11,8 +11,9 @@ echo "Datebase:" $MIKNAS_DATABASE_PATH
 cd ../server/example
 if ! [ -d client ]; then
   cd ../../client
-  quasar build
+  yarn quasar build
   cd ../server/example
   cp -r ../../client/dist/spa ./client
 fi
+export CGO_ENABLED=1
 go run main.go

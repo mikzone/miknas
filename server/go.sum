@@ -94,6 +94,8 @@ github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ic
 github.com/lib/pq v1.10.3/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/markthree/go-get-folder-size v0.2.12 h1:gCHfoRan2fDUVNoMh3Rl4L//SD4j5yhfl2LljBRpqSg=
 github.com/markthree/go-get-folder-size v0.2.12/go.mod h1:8lBeBZh99MpSqZeHMtBlpySRKKzInu4EfBkvskO+L3w=
+github.com/markthree/go-get-folder-size v0.5.5 h1:LoQM8CZugQVI9k4YlnVRUaLHMVSmWCcTmyxWM8nIPiY=
+github.com/markthree/go-get-folder-size v0.5.5/go.mod h1:FZ/vUFAP8XWp4Y9SqCQEuYz0geLHS9O0yTlIDXNmv7U=
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
 github.com/mattn/go-isatty v0.0.17 h1:BTarxUcIeDqL27Mc+vyvdWYSL28zpIhv3RoTdsLMPng=
 github.com/mattn/go-isatty v0.0.17/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
