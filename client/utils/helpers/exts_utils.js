@@ -1,6 +1,6 @@
 // Extensions相关工具
 
-import { useOfficialStore } from 'miknas/exts/Official/stores/official';
+import { useOfficialStore } from 'miknas/exts/Official/stores/official.js';
 import { MikCall, gutil } from './official_utils';
 
 class Extension {
@@ -135,7 +135,7 @@ export function scanAllExtension(ctx, files) {
         if (typeof extsRoute == 'function') extsRoute = extsRoute(extsObj);
         extsRoute.path = extsObj.routePath('');
         extsRoute.name = extsObj.routeName('');
-        extsRoute.component = extsRoute.component || (() => import('../exts/Official/shares').then((module)=>module['ExtensionPage']));
+        extsRoute.component = extsRoute.component || (() => import('miknas/exts/Official/shares').then((module)=>module['ExtensionPage']));
         extsRoute.meta = extsRoute.meta || {};
         extsRoute.meta.extsId = extsId;
         router.addRoute('miknas_exts', extsRoute);

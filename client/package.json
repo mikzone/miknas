@@ -4,6 +4,7 @@
   "description": "client for miknas",
   "productName": "Miknas",
   "author": "mikzone",
+  "type": "module",
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
@@ -11,18 +12,26 @@
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0"
   },
+  "exports": {
+    "./utils": "./utils/index.js",
+    "./exts/*": "./exts/*"
+  },
   "dependencies": {
     "@bytemd/plugin-gfm": "^1.21.0",
     "@bytemd/plugin-highlight": "^1.21.0",
     "@bytemd/vue-next": "^1.21.0",
     "@quasar/extras": "^1.16.3",
+    "@types/qs": "^6.9.16",
     "axios": "^1.3.6",
     "bcryptjs": "^2.4.3",
+    "bytemd": "^1.21.0",
     "crypto-js": "^4.1.1",
     "hammerjs": "^2.0.8",
+    "highlight.js": "^11.10.0",
     "jsencrypt": "^3.3.2",
     "photoswipe": "^5.3.7",
     "pinia": "^2.0.35",
+    "qs": "^6.13.0",
     "quasar": "^2.12.0",
     "vditor": "^3.9.2",
     "video.js": "^8.0.4",

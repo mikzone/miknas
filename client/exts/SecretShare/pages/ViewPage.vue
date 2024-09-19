@@ -63,7 +63,7 @@
 </template>
 <script setup>
 import { exportFile } from 'quasar';
-import { gutil, MikCall, MyAes } from 'miknas/utils.js';
+import { gutil, MikCall, MyAes } from 'miknas/utils';
 import { onMounted, reactive } from 'vue';
 import { useExtension } from '../extMain.js';
 import { openUnlockSecretDlg } from '../helper';

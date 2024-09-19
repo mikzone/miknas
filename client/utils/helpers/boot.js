@@ -1,11 +1,12 @@
 // import something here
 
-import { gutil, MikCall, scanAllExtension } from './utils'
-import { useOfficialStore } from './exts/Official/stores/official';
+import { gutil, MikCall } from './official_utils'
+import { scanAllExtension } from './exts_utils'
+import { useOfficialStore } from 'miknas/exts/Official/stores/official';
 
 // "async" is optional;
 // more info on params: https://quasar.dev/quasar-cli/boot-files
-export default async (ctx) => {
+export const boot = async (ctx) => {
   // something to do
   let { app, router } = ctx;
 
@@ -19,18 +20,18 @@ export default async (ctx) => {
   // 注册路由
   router.addRoute({
     path: officialStore.mdClientUrl('/'),
-    component: () => import('./exts/Official/shares').then((module)=>module['SimpleNestRouterView']),
-    meta: {needLogined: true},
+    component: () => import('miknas/exts/Official/shares').then((module) => module['SimpleNestRouterView']),
+    meta: { needLogined: true },
     name: 'miknas_exts',
     children: [],
   });
 
   // 注册所有的extension
-  scanAllExtension(ctx, import.meta.globEager('./exts/*/extMain.js'));
+  scanAllExtension(ctx, import.meta.glob('../../exts/*/extMain.js', { eager: true }));
 
   router.addRoute('miknas_exts', {
     path: ':catchAll(.*)*',
-    component: () => import('./exts/Official/pages/ExtsNotFound.vue')
+    component: () => import('miknas/exts/Official/pages/ExtsNotFound.vue')
   });
 
   router.beforeEach((to) => {

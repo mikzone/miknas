@@ -75,7 +75,7 @@ export const useOfficialStore = defineStore('official', {
     },
 
     mdServerUrl(subUrl) {
-      let prefix = process.env.MIKNAS_SERVER_PREFIX || '/s';
+      let prefix = import.meta.env.MIKNAS_SERVER_PREFIX || '/s';
       prefix = gutil.strip(prefix, '/', false, true);
       subUrl = gutil.strip(subUrl, '/', true, false);
       return `${prefix}/${subUrl}`;
