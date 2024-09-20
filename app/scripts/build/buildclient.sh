@@ -4,7 +4,7 @@ set -e
 cd ../../client
 pwd
 set -x
-quasar build
+pnpm build
 set +x
 
 echo
@@ -12,5 +12,5 @@ echo
 cd ../
 pwd
 set -x
-rm -rf server/example/client
-cp -r client/dist/spa server/example/client
+rm -rf server/builded_client
+mv client/dist server/builded_client

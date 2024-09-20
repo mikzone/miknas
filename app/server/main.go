@@ -49,7 +49,7 @@ func main() {
 	app.StartInit()
 
 	// 使用embed来打包client，client目录需要提前编译好复制过来
-	webfs, err := fs.Sub(clientf, "client")
+	webfs, err := fs.Sub(clientf, "builded_client")
 	if err != nil {
 		panic(err)
 	}

@@ -1,18 +1,20 @@
 #!/bin/bash
 set -e
+# changeto app dir
+cd ../../
 
-cd ../../client
+# start build client
+cd client
 pwd
 set -x
-yarn quasar build
-set +x
-
-echo
-
+pnpm build
 cd ../
+set +x
 pwd
 set -x
-rm -rf server/example/client
-cp -r client/dist/spa server/example/client
-docker build -t miknas -f scripts/docker/build.dockerfile .
+rm -rf server/builded_client
+cp -r client/dist server/builded_client
+
+cd ..
+docker build -t miknas -f app/scripts/docker/build.dockerfile .
 docker image ls miknas

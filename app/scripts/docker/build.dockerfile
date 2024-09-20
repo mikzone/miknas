@@ -1,4 +1,4 @@
-ARG GOLANG_VERSION=1.21
+ARG GOLANG_VERSION=1.22
 FROM golang:${GOLANG_VERSION}-bullseye as builder
 
 ARG VIPS_VERSION=8.14.2
@@ -59,20 +59,28 @@ RUN DEBIAN_FRONTEND=noninteractive \
   rm -rf /usr/local/lib/*.a && \
   rm -rf /usr/local/lib/*.la
 
-WORKDIR ${GOPATH}/src/github.com/mikzone/miknas/server
-
 # Cache go modules
 ENV GO111MODULE=on
 
-COPY server/go.mod .
-COPY server/go.sum .
+WORKDIR ${GOPATH}/src/github.com/mikzone/miknas
 
+COPY go.work .
+COPY go.work.sum .
+
+WORKDIR ${GOPATH}/src/github.com/mikzone/miknas
+
+COPY server/go.mod server/go.mod
+COPY server/go.sum server/go.sum
+COPY app/server/go.mod app/server/go.mod
+
+# RUN go work sync
 RUN go mod download
 
 # Copy imaginary sources
-COPY server .
+COPY server server
+COPY app/server app/server
 
-WORKDIR ${GOPATH}/src/github.com/mikzone/miknas/server/example
+WORKDIR ${GOPATH}/src/github.com/mikzone/miknas/app/server
 
 RUN go build \
     -o ${GOPATH}/bin/miknas_server \
