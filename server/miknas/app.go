@@ -13,6 +13,7 @@ import (
 )
 
 type App struct {
+	Engine         *gin.Engine
 	svrRouter      *gin.RouterGroup
 	extids         []string
 	exts           map[string]IExtension
@@ -138,9 +139,12 @@ func (a *App) RegFileSpace(filespace IFileSpace) error {
 	return nil
 }
 
-func NewApp(r *gin.RouterGroup) *App {
+func NewApp() *App {
+	engine := gin.Default()
+	r := engine.Group("/")
 	svrRouter := r.Group("/s")
 	app := &App{
+		Engine:     engine,
 		svrRouter:  svrRouter,
 		extids:     []string{},
 		exts:       map[string]IExtension{},

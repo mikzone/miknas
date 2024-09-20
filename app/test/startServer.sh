@@ -8,12 +8,12 @@ export MIKNAS_WORKSPACE=$webrootdir/workspace
 export MIKNAS_SECRET_KEY=goodgood
 echo "Workspace:" $MIKNAS_WORKSPACE
 echo "Datebase:" $MIKNAS_DATABASE_PATH
-cd ../server/example
+cd ../server
 if ! [ -d client ]; then
-  cd ../../client
-  yarn quasar build
-  cd ../server/example
-  cp -r ../../client/dist/spa ./client
+  cd ../client
+  pnpm build
+  cd ../server
+  mv ../client/dist ./client
 fi
-export CGO_ENABLED=1
+export CGO_ENABLED=0
 go run main.go

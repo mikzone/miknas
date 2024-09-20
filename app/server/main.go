@@ -7,7 +7,6 @@ import (
 
 	// _ "net/http/pprof"
 
-	"github.com/gin-gonic/gin"
 	"github.com/mikzone/miknas/server/exts/bookmarks"
 	"github.com/mikzone/miknas/server/exts/cmdexec"
 	"github.com/mikzone/miknas/server/exts/devtool"
@@ -31,9 +30,7 @@ func main() {
 	// }()
 
 	// 初始化app
-	engine := gin.Default()
-	router := engine.Group("/")
-	app := miknas.NewApp(router)
+	app := miknas.NewApp()
 	app.AddExt(official.New())
 	app.AddExt(mikauth.New())
 
@@ -56,6 +53,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	engine := app.Engine
 	// 指定未识别的路由都交由前端处理
 	engine.NoRoute(miknas.VueHandler(http.FS(webfs)))
 
