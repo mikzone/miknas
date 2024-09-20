@@ -1,5 +1,5 @@
 // import something here
-
+import '../../css/app.scss'
 import { gutil, MikCall } from './official_utils'
 import { scanAllExtension } from './exts_utils'
 import { useOfficialStore } from 'miknas/exts/Official/stores/official';

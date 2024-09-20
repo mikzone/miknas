@@ -13,8 +13,8 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "exports": {
-    "./utils": "./utils/index.js",
-    "./exts/*": "./exts/*"
+    "./utils": "./src/utils/index.js",
+    "./exts/*": "./src/exts/*"
   },
   "dependencies": {
     "@bytemd/plugin-gfm": "^1.21.0",
