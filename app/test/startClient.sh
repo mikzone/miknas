@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 cd ../client
-yarn quasar dev
+pnpm dev
