@@ -9,11 +9,11 @@ export MIKNAS_SECRET_KEY=goodgood
 echo "Workspace:" $MIKNAS_WORKSPACE
 echo "Datebase:" $MIKNAS_DATABASE_PATH
 cd ../server
-if ! [ -d client ]; then
+if ! [ -d builded_client ]; then
   cd ../client
   pnpm build
   cd ../server
-  mv ../client/dist ./client
+  mv ../client/dist ./builded_client
 fi
 export CGO_ENABLED=0
 go run main.go

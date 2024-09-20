@@ -21,7 +21,7 @@ import (
 	"github.com/mikzone/miknas/server/miknas"
 )
 
-//go:embed client
+//go:embed builded_client
 var clientf embed.FS
 
 func main() {
