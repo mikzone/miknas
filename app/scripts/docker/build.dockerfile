@@ -1,5 +1,5 @@
 ARG GOLANG_VERSION=1.22
-FROM golang:${GOLANG_VERSION}-bullseye as builder
+FROM golang:${GOLANG_VERSION}-bullseye AS builder
 
 ARG VIPS_VERSION=8.14.2
 ARG CGIF_VERSION=0.3.0
@@ -116,7 +116,7 @@ RUN groupadd -r --gid 1000 miknas && useradd --no-log-init -r -g 1000 -u 1000 mi
   mkdir -p /web/workspace && mkdir -p /web/config && chmod -R 777 /web
 USER miknas
 
-ENV PORT 2020
+ENV PORT=2020
 WORKDIR /web
 ENTRYPOINT ["/usr/local/bin/miknas_server"]
 EXPOSE ${PORT}

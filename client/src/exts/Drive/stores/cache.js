@@ -50,6 +50,15 @@ export const useCacheStore = defineStore('driveCache', {
         );
       };
     },
+    getAllRec: (state) => {
+      return (fsid, fspath) => {
+        return gutil.getDictValueByKeys(
+          state.fsRec,
+          [fsid, fspath],
+          {}
+        );
+      };
+    },
   },
 
   actions: {
@@ -62,10 +71,25 @@ export const useCacheStore = defineStore('driveCache', {
       }
       if (withCache && fsidCache[fspath]) return fsidCache[fspath];
       // await MikCall.coDelay(20000)
-      let iRet = await extsObj.mcpost('listFiles', { fsid, fspath });
+      let needFolderSize = this.getNeedFolderSize(fsid, fspath);
+      if (needFolderSize === undefined) {
+        let parentFspath = FileUtil.dir(fspath);
+        let parentNeedFolderSize = this.getNeedFolderSize(fsid, parentFspath);
+        if (parentNeedFolderSize == true) {
+          this.updateNeedFolderSize(fsid, fspath, true);
+          needFolderSize = true;
+        }
+      }
+      let beginTs = Date.now();
+      let iRet = await extsObj.mcpost('listFiles', { fsid, fspath, needFolderSize });
       if (!iRet.suc) {
         MikCall.alertRespErrMsg(iRet);
         return;
+      }
+      let endTs = Date.now();
+      if (endTs - beginTs > 2000) {
+        // 耗时太久的话，下次就不计算文件夹大小了
+        this.updateNeedFolderSize(fsid, fspath, false);
       }
       let ret = iRet.ret;
       fspath = ret.fspath;
@@ -82,6 +106,7 @@ export const useCacheStore = defineStore('driveCache', {
       }
       if (!this.fsCache[fsid]) this.fsCache[fsid] = {};
       this.fsCache[fsid][fspath] = ret.files;
+      this.updateRec(fsid, fspath, 'hasFolderSize', needFolderSize);
       this.sortFiles(fsid, fspath);
       return this.fsCache[fsid][fspath];
     },
@@ -123,6 +148,12 @@ export const useCacheStore = defineStore('driveCache', {
     },
     getFsPosition(fsid, fspath) {
       return this.getOneRec(fsid, fspath, 'top');
-    }
+    },
+    updateNeedFolderSize(fsid, fspath, needFolderSize) {
+      this.updateRec(fsid, fspath, 'needFolderSize', needFolderSize);
+    },
+    getNeedFolderSize(fsid, fspath) {
+      return this.getOneRec(fsid, fspath, 'needFolderSize');
+    },
   },
 });

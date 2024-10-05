@@ -158,6 +158,10 @@ export const FileUtil = {
     let l = filePath.split(PathSep);
     return l[l.length - 1];
   },
+  dir(filePath) {
+    let l = filePath.split(PathSep);
+    return l.slice(0, l.length - 1).join(PathSep);
+  },
   contactFolderName(name1, name2) {
     if (name1.length <= 0) return name2;
     return name1 + PathSep + name2;
@@ -192,9 +196,8 @@ export const FileUtil = {
       size = (1.0 * size) / FileUtil.sizeStep;
     }
     size = size * FileUtil.sizeStep;
-    return `${FileUtil.formatFloat(size)}${
-      FileUtil.sizeUnits[FileUtil.sizeUnits.length - 1]
-    }`;
+    return `${FileUtil.formatFloat(size)}${FileUtil.sizeUnits[FileUtil.sizeUnits.length - 1]
+      }`;
   },
   formatTs(timeStamp) {
     return date.formatDate(timeStamp, 'YYYY-MM-DD HH:mm:ss');
@@ -345,13 +348,16 @@ export function useFileView(fsid, rootPath, extraConf) {
     curSortSave: computed(() => {
       return cacheStore.getSortSave(fsid, fileState.curPath);
     }),
-    selectAllStatusIcon: computed(()=>{
+    curRecData: computed(() => {
+      return cacheStore.getAllRec(fsid, fileState.curPath);
+    }),
+    selectAllStatusIcon: computed(() => {
       let selectLen = fileState.curSelected.length;
       if (selectLen <= 0) return 'check_box_outline_blank';
       else if (selectLen == fileState.curFiles.length) return 'check_box';
       else return 'indeterminate_check_box';
     }),
-    isReadOnly: computed(()=>{
+    isReadOnly: computed(() => {
       return extraConf.isReadOnly;
     })
   };
@@ -437,6 +443,11 @@ export function useFileView(fsid, rootPath, extraConf) {
         return;
       }
       cacheStore.sortFiles(fsid, fileState.curPath, sortMethod, false);
+    },
+
+    updateNeedFolderSize(needFolderSize) {
+      cacheStore.updateNeedFolderSize(fsid, fileState.curPath, needFolderSize);
+      fileOp.tryRefreshFiles();
     },
 
     abs(relPath) {

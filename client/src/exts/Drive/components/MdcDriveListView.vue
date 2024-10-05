@@ -59,9 +59,18 @@
                   <q-icon
                     v-show="fileGetter.curSortSave.value.method == sortMethod"
                     :name="
-                      (fileGetter.curSortSave.value.desc && 'arrow_downward') ||
-                      'arrow_upward'
+                      (fileGetter.curSortSave.value.desc && 'arrow_downward') || 'arrow_upward'
                     "
+                  />
+                </q-item-section>
+              </q-item>
+              <q-separator spaced />
+              <q-item v-ripple clickable>
+                <q-item-section> 查看文件夹大小 </q-item-section>
+                <q-item-section side>
+                  <q-checkbox
+                    :model-value="!!fileGetter.curRecData.value.hasFolderSize"
+                    @update:model-value="updateNeedFolderSize"
                   />
                 </q-item-section>
               </q-item>
@@ -109,13 +118,9 @@
           <q-icon :name="fileInfo.icon" />
         </q-item-section>
         <q-item-section>
-          <q-item-label class="mn-word-break-all" :lines="2">{{
-            fileInfo.name
-          }}</q-item-label>
+          <q-item-label class="mn-word-break-all" :lines="2">{{ fileInfo.name }}</q-item-label>
           <q-item-label caption>
-            <template v-if="fileInfo.viewSize">
-              {{ fileInfo.viewSize }} |
-            </template>
+            <template v-if="fileInfo.viewSize"> {{ fileInfo.viewSize }} | </template>
             {{ fileInfo.viewModify }}
           </q-item-label>
         </q-item-section>
@@ -168,10 +173,7 @@
               class="cursor-pointer"
               @click="fileOp.clickOpen(fileInfo)"
             />
-            <q-card-section
-              v-if="fileGetter.showMode.value == 'grid'"
-              class="q-pa-xs"
-            >
+            <q-card-section v-if="fileGetter.showMode.value == 'grid'" class="q-pa-xs">
               <q-item-label class="mn-word-break-all text-center" lines="2">{{
                 fileInfo.name
               }}</q-item-label>
@@ -195,12 +197,7 @@
                 </div>
               </div>
             </q-card-section>
-            <q-item
-              v-else
-              v-ripple
-              clickable
-              @click="fileOp.clickOpen(fileInfo)"
-            >
+            <q-item v-else v-ripple clickable @click="fileOp.clickOpen(fileInfo)">
               <q-item-section avatar>
                 <q-icon :name="fileInfo.icon" />
               </q-item-section>
@@ -209,9 +206,7 @@
                   fileInfo.name
                 }}</q-item-label>
                 <q-item-label caption>
-                  <template v-if="fileInfo.viewSize">
-                    {{ fileInfo.viewSize }} |
-                  </template>
+                  <template v-if="fileInfo.viewSize"> {{ fileInfo.viewSize }} | </template>
                   {{ fileInfo.viewModify }}
                 </q-item-label>
               </q-item-section>
@@ -233,9 +228,7 @@
         </div>
       </div>
     </div>
-    <div v-if="fileState.curFiles.length <= 0" class="q-pa-md">
-      文件列表为空
-    </div>
+    <div v-if="fileState.curFiles.length <= 0" class="q-pa-md">文件列表为空</div>
     <div class="fixed-bottom row flex-center" style="pointer-events: none">
       <div v-if="fileState.isSelectMode" style="pointer-events: auto">
         <q-btn-group class="bg-secondary">
@@ -262,12 +255,7 @@
               </q-item>
             </q-list>
           </q-btn-dropdown>
-          <q-btn
-            dense
-            color="secondary"
-            icon="close"
-            @click.stop.prevent="fileOp.quitSelectMode"
-          />
+          <q-btn dense color="secondary" icon="close" @click.stop.prevent="fileOp.quitSelectMode" />
         </q-btn-group>
       </div>
     </div>
@@ -290,18 +278,18 @@ const extsObj = useExtension();
 const props = defineProps({
   fsid: {
     type: String,
-    required: true,
+    required: true
   },
   rootPath: {
     type: String,
-    default: '',
+    default: ''
   },
   extraConf: {
     type: Object,
     default: () => {
       return {};
-    },
-  },
+    }
+  }
 });
 
 const fileViewProxy = useFileView(props.fsid, props.rootPath, props.extraConf);
@@ -312,6 +300,10 @@ function calcThumbSrc(fileName) {
     return fileOp.getViewUrl(fpath);
   }
   return extsObj.serverUrl(`thumb/${props.fsid}/${fpath}`);
+}
+
+function updateNeedFolderSize(val) {
+  fileOp.updateNeedFolderSize(val);
 }
 
 const { fileState, fileGetter, fileOp } = fileViewProxy;
