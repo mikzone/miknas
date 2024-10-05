@@ -12,14 +12,14 @@ class Extension {
     this.title = extsConf.title;
     this.icon = extsConf.icon;
     this.route = extsConf.route;
-    if (extsConf.index  === undefined) extsConf.index = true;
+    if (extsConf.index === undefined) extsConf.index = true;
     this.index = extsConf.index;
     this.hasIndex = false;
     this.routeNamePrefix = `miknas_exts_${this.id}`;
     this.alias = undefined;
   }
 
-  hasAuth(resid){
+  hasAuth(resid) {
     return useOfficialStore().canAccess(this.id, resid);
   }
 
@@ -121,25 +121,33 @@ export function defineExtension(extsConf) {
   return GetExtensionInst;
 }
 
-export function scanAllExtension(ctx, files) {
+export function registerExtensions(ctx) {
   // 扫描所有的扩展
-  let { router } = ctx;
-  for (let module of Object.values(files)) {
+  let { router, extsObjMap } = ctx;
+  for (let extsObj of Object.values(extsObjMap)) {
+    // 注册路由
+    if (extsObj && extsObj.route) {
+      let extsId = extsObj.id;
+      let extsRoute = extsObj.route;
+      if (typeof extsRoute == 'function') extsRoute = extsRoute(extsObj);
+      extsRoute.path = extsObj.routePath('');
+      extsRoute.name = extsObj.routeName('');
+      extsRoute.component = extsRoute.component || (() => import('miknas/exts/Official/shares').then((module) => module['ExtensionPage']));
+      extsRoute.meta = extsRoute.meta || {};
+      extsRoute.meta.extsId = extsId;
+      router.addRoute('miknas_exts', extsRoute);
+    }
+  }
+}
+
+export function scanAllExtension(extsObjMap, modules) {
+  // 扫描所有的扩展
+  for (let module of modules) {
     let useExtension = module.useExtension;
     if (useExtension) {
       let extsObj = useExtension();
-      // 注册路由
-      if (extsObj && extsObj.route) {
-        let extsId = extsObj.id;
-        let extsRoute = extsObj.route;
-        if (typeof extsRoute == 'function') extsRoute = extsRoute(extsObj);
-        extsRoute.path = extsObj.routePath('');
-        extsRoute.name = extsObj.routeName('');
-        extsRoute.component = extsRoute.component || (() => import('miknas/exts/Official/shares').then((module)=>module['ExtensionPage']));
-        extsRoute.meta = extsRoute.meta || {};
-        extsRoute.meta.extsId = extsId;
-        router.addRoute('miknas_exts', extsRoute);
-      }
+      let extsId = extsObj.id;
+      extsObjMap[extsId] = extsObj;
     }
   }
 }

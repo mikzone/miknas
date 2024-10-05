@@ -1,7 +1,7 @@
 // import something here
 import '../../css/app.scss'
 import { gutil, MikCall } from './official_utils'
-import { scanAllExtension } from './exts_utils'
+import { registerExtensions } from './exts_utils'
 import { useOfficialStore } from 'miknas/exts/Official/stores/official';
 
 // "async" is optional;
@@ -27,7 +27,7 @@ export const boot = async (ctx) => {
   });
 
   // 注册所有的extension
-  scanAllExtension(ctx, import.meta.glob('../../exts/*/extMain.js', { eager: true }));
+  registerExtensions(ctx);
 
   router.addRoute('miknas_exts', {
     path: ':catchAll(.*)*',
