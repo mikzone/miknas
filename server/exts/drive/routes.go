@@ -17,6 +17,12 @@ type inDataFsLocate struct {
 	Fspath string `json:"fspath" form:"fspath"`
 }
 
+type inDataFsListFile struct {
+	Fsid           string `json:"fsid" form:"fsid" binding:"required"`
+	Fspath         string `json:"fspath" form:"fspath"`
+	NeedFolderSize bool   `json:"needFolderSize" form:"needFolderSize"`
+}
+
 type inDataFsRename struct {
 	Fsid   string `json:"fsid" form:"fsid" binding:"required"`
 	Fspath string `json:"fspath" form:"fspath" binding:"required"`
@@ -42,10 +48,11 @@ type inDataFsUpload struct {
 }
 
 func listFiles(ch *miknas.ContextHelper) {
-	var loc inDataFsLocate
+	var loc inDataFsListFile
 	ch.BindJSON(&loc)
 	fsd := ch.OpenFs(loc.Fsid, "r")
-	needDirSize := ch.GetApp().ConfMgr.Get("MIKNAS_DRIVE_NEED_DIR_SIZE").(string) == "1"
+	// needDirSize := ch.GetApp().ConfMgr.Get("MIKNAS_DRIVE_NEED_DIR_SIZE").(string) == "1"
+	needDirSize := loc.NeedFolderSize
 	fileInfos, err := fsd.ListDir(fsd, loc.Fspath, needDirSize)
 	ch.EnsureNoErr(err)
 	fCInfos := []FileClientInfo{}

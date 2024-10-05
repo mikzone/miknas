@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    "paths": {}
+  },
+  "include": ["src/**/*", "mode_modules/miknas/**/*"]
+}

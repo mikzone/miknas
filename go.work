@@ -1,0 +1,8 @@
+go 1.22.2
+
+use (
+	./app/server
+	./server
+)
+
+replace github.com/mikzone/miknas/server v0.0.1 => ./app/server
