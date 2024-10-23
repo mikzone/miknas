@@ -37,7 +37,6 @@ func (ext *MikNasExt) OnBind() {
 	}
 	ext.RegStrConf("MIKNAS_SECRET_KEY", initSecretKey, "用作Session加密的Key", false)
 	ext.RegStrConf("MIKNAS_WORKSPACE", "./workspace", "工作空间目录", false)
-	ext.RegStrConf("MIKNAS_CONFIG_DIR", "./config", "配置存储目录", false)
 
 	ext.RegStrConf("MIKNAS_AUTH_EXTS", "MikAuth", "登录认证使用的扩展", true)
 	ext.RegStrConf("MIKNAS_CLIENT_PREFIX", "/", "客户端地址前缀,用来给服务端拼凑客户端url的", true)

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pelletier/go-toml/v2"
 )
 
 /*
@@ -100,6 +101,21 @@ func (m *ConfigManager) UpdateFromEnv() {
 	}
 }
 
+func (m *ConfigManager) UpdateFromTomlFile(filepath string) error {
+	Content, err := os.ReadFile(filepath)
+	if err != nil {
+		return fmt.Errorf("open toml file(%s) Fail: %v", filepath, err)
+	}
+	anyMap := make(map[string]any, 0)
+	err = toml.Unmarshal(Content, &anyMap)
+	if err != nil {
+		return fmt.Errorf("unmarshal toml file(%s) Fail: %v", filepath, err)
+	}
+
+	m.UpdateFromMap(anyMap)
+	return nil
+}
+
 func (m *ConfigManager) PrintConfigs() {
 	ret := gin.H{}
 	for k := range m.items {
@@ -164,6 +180,23 @@ func CheckConvMap(value any) (any, error) {
 	v, ok := value.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("value(%v) is not map[string]any type", v)
+	}
+	return v, nil
+}
+
+func CheckConvList(value any) (any, error) {
+	str1, ok1 := value.(string)
+	if ok1 {
+		// string need to convert to list
+		anyList := make([]any, 0)
+		if err := json.Unmarshal([]byte(str1), &anyList); err != nil {
+			return nil, err
+		}
+		return anyList, nil
+	}
+	v, ok := value.([]any)
+	if !ok {
+		return nil, fmt.Errorf("value(%v) is not []any type", v)
 	}
 	return v, nil
 }

@@ -102,6 +102,11 @@ func (r *Extension) RegMapConf(key string, defv any, desc string, sendClient boo
 	return r.RegConf(item)
 }
 
+func (r *Extension) RegListConf(key string, defv any, desc string, sendClient bool) error {
+	item := ConfItem{Key: key, Default: defv, Desc: desc, SendClient: sendClient, CheckConv: CheckConvList}
+	return r.RegConf(item)
+}
+
 func (r *Extension) RegAuth(resid AuthResId, desc string, sendClient bool) error {
 	item := AuthResItem{
 		ResId:      resid,
