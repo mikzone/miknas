@@ -126,6 +126,8 @@ export const FileUtil = {
     java: 'text',
     php: 'text',
     xml: 'text',
+    lua: 'text',
+    toml: 'text',
   },
   typeDescs: {
     text: {
