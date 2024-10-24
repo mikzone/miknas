@@ -15,19 +15,63 @@ Config Item need to be declare before use.
 We assume that all config value are jsonable,
 because sometime we need to send to client!
 */
-type ConfItem struct {
+
+type IConfItem interface {
+	// 配置文件
+	GetKey() string
+	GetDefault() any
+	GetDesc() string
+	GetExtId() string
+	SetExtId(string)
+	GetSendClient() bool
+	CheckConv(any) (any, error)
+}
+
+type TConfItem[T any] struct {
 	Key        string
-	Default    any
+	Default    T
 	Desc       string
 	SendClient bool
 	// indicate who register it
-	ExtId string
-	// validate input value and convert to the right value.
-	CheckConv func(any) (any, error)
+	ExtId           string
+	CustomCheckConv func(any) (any, error)
 }
 
+func (c *TConfItem[T]) GetKey() string {
+	return c.Key
+}
+
+func (c *TConfItem[T]) GetDefault() any {
+	return c.Default
+}
+
+func (c *TConfItem[T]) GetDesc() string {
+	return c.Desc
+}
+
+func (c *TConfItem[T]) GetExtId() string {
+	return c.ExtId
+}
+
+func (c *TConfItem[T]) SetExtId(extid string) {
+	c.ExtId = extid
+}
+
+func (c *TConfItem[T]) GetSendClient() bool {
+	return c.SendClient
+}
+
+func (c *TConfItem[T]) CheckConv(v any) (any, error) {
+	if c.CustomCheckConv != nil {
+		return c.CustomCheckConv(v)
+	}
+	return CheckConvTAny[T](v)
+}
+
+var _ IConfItem = (*TConfItem[int])(nil)
+
 type ConfigManager struct {
-	items    map[string]ConfItem
+	items    map[string]IConfItem
 	values   map[string]any
 	sendlist []string
 }
@@ -40,18 +84,18 @@ func (m *ConfigManager) PackClientDict() gin.H {
 	return ret
 }
 
-func (m *ConfigManager) RegConfItem(item ConfItem) error {
-	k := item.Key
+func (m *ConfigManager) RegConfItem(item IConfItem) error {
+	k := item.GetKey()
 	if preItem, ok := m.items[k]; ok {
-		return fmt.Errorf("key %s existed, registed by extid(%s)", k, preItem.ExtId)
+		return fmt.Errorf("key %s existed, registed by extid(%s)", k, preItem.GetExtId())
 	}
 	m.items[k] = item
-	err := m.UpdateValue(k, item.Default)
+	err := m.UpdateValue(k, item.GetDefault())
 	if err != nil {
 		delete(m.items, k)
 		return err
 	}
-	if item.SendClient {
+	if item.GetSendClient() {
 		m.sendlist = append(m.sendlist, k)
 	}
 	return nil
@@ -62,14 +106,11 @@ func (m *ConfigManager) UpdateValue(k string, v any) error {
 	if !ok {
 		return fmt.Errorf("config key(%s) not register", k)
 	}
-	if item.CheckConv != nil {
-		real, err := item.CheckConv(v)
-		if err != nil {
-			return fmt.Errorf("value(%v) of key(%s) cannot pass CheckConv, err: %v", v, k, err)
-		}
-		v = real
+	real, err := item.CheckConv(v)
+	if err != nil {
+		return fmt.Errorf("value(%v) of key(%s) cannot pass CheckConv, err: %v", v, k, err)
 	}
-	m.values[item.Key] = v
+	m.values[item.GetKey()] = real
 	return nil
 }
 
@@ -83,7 +124,7 @@ func (m *ConfigManager) UpdateFromMap(obj map[string]any) {
 		if m.IsConfKey(k) {
 			err := m.UpdateValue(k, v)
 			if err != nil {
-				fmt.Printf("UpdateFromMap Fail: err: %v", err)
+				panic(fmt.Errorf("ConfigManager.UpdateFromMap Fail: %v", err))
 			}
 		}
 	}
@@ -95,7 +136,7 @@ func (m *ConfigManager) UpdateFromEnv() {
 		if len(v) > 0 {
 			err := m.UpdateValue(k, v)
 			if err != nil {
-				fmt.Printf("UpdateFromEnv Fail: err: %v", err)
+				panic(fmt.Errorf("UpdateFromEnv Fail: err: %v", err))
 			}
 		}
 	}
@@ -136,7 +177,7 @@ func (m *ConfigManager) Get(k string) any {
 
 func NewConfigManager() *ConfigManager {
 	return &ConfigManager{
-		map[string]ConfItem{},
+		map[string]IConfItem{},
 		map[string]any{},
 		[]string{},
 	}
@@ -199,4 +240,29 @@ func CheckConvList(value any) (any, error) {
 		return nil, fmt.Errorf("value(%v) is not []any type", v)
 	}
 	return v, nil
+}
+
+func CheckConvTAny[T any](value any) (any, error) {
+	vv0, ok0 := value.(T)
+	if ok0 {
+		return vv0, nil
+	}
+	str1, ok1 := value.(string)
+	if !ok1 {
+		// 如果不是字符串，比如用toml这种会先格式化好的，则尝试先转回json字符串再Unmarshal（低效一些的方法）
+		byte2, err2 := json.Marshal(value)
+		if err2 != nil {
+			return nil, fmt.Errorf("json marshal err: %v", err2)
+		}
+		str1 = string(byte2)
+	}
+	vv1 := new(T)
+	if err := json.Unmarshal([]byte(str1), &vv1); err != nil {
+		return nil, fmt.Errorf("json unmarshal err: %v", err)
+	}
+	return *vv1, nil
+}
+
+func NewConfItem[T any](key string, defv T, desc string, sendClient bool) IConfItem {
+	return &TConfItem[T]{Key: key, Default: defv, Desc: desc, SendClient: sendClient}
 }

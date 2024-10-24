@@ -1,8 +1,6 @@
 package customworks
 
 import (
-	"encoding/json"
-
 	"github.com/mikzone/miknas/server/miknas"
 )
 
@@ -25,20 +23,18 @@ func New() *MikNasExt {
 func (ext *MikNasExt) OnBind() {
 	// you can register config, auth, routes in here
 	ext.RegAuth(ext.Res("vist"), "使用CustomWorks", false)
-	ext.RegListConf("CUSTOM_WORKS_PLUGINS", []any{}, "CustomWorks相关定义文件列表", false)
-	ext.RegListConf("CUSTOM_WORKS_SPACES", []any{}, "CustomWorks相关实例目录列表", false)
+	ext.RegConfs(
+		miknas.NewConfItem("CUSTOM_WORKS_PLUGINS", []string{}, "CustomWorks相关定义文件列表", false),
+		miknas.NewConfItem("CUSTOM_WORKS_SPACES", []SpaceDef{}, "CustomWorks相关实例目录列表", false),
+	)
 	regRoutes(ext)
 }
 
 func (ext *MikNasExt) scanDefs() {
 	ConfMgr := ext.App.ConfMgr
-	defFiles, ok := ConfMgr.Get("CUSTOM_WORKS_PLUGINS").([]any)
-	if !ok {
-		return
-	}
+	defFiles := ConfMgr.Get("CUSTOM_WORKS_PLUGINS").([]string)
 	for _, defFile := range defFiles {
-		defFileStr := defFile.(string)
-		workDef, err := ReadWorkDef(defFileStr)
+		workDef, err := ReadWorkDef(defFile)
 		if err != nil {
 			ext.Logger().Warn("ReadWorkDefFail", "file", defFile, "err", err)
 			continue
@@ -50,16 +46,7 @@ func (ext *MikNasExt) scanDefs() {
 
 func (ext *MikNasExt) scanSpaces() {
 	ConfMgr := ext.App.ConfMgr
-	spaceDefsList := ConfMgr.Get("CUSTOM_WORKS_SPACES")
-	jsonStr, err := json.Marshal(spaceDefsList)
-	if err != nil {
-		return
-	}
-	var spaceDefs []SpaceDef
-	err = json.Unmarshal(jsonStr, &spaceDefs)
-	if err != nil {
-		return
-	}
+	spaceDefs := ConfMgr.Get("CUSTOM_WORKS_SPACES").([]SpaceDef)
 	for _, spaceDef := range spaceDefs {
 		// err := ReadSpaceExt(&spaceDef)
 		// if err != nil {

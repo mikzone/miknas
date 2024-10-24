@@ -20,6 +20,8 @@ type IExtension interface {
 	ClientUrl(string) string
 	// 注册权限(资源名称，权限描述，是否发送给客户端)
 	RegAuth(AuthResId, string, bool) error
+	RegConf(item IConfItem)
+	RegConfs(item ...IConfItem)
 	OnBind()
 	OnInit()
 	GetLogger(string) *slog.Logger
@@ -77,34 +79,29 @@ func (r *Extension) Res(resource string) AuthResId {
 	return AuthResId(fmt.Sprintf("%s/%s", r.ExtId, resource))
 }
 
-func (r *Extension) RegConf(item ConfItem) error {
-	item.ExtId = r.ExtId
+func (r *Extension) RegConf(item IConfItem) {
+	item.SetExtId(r.ExtId)
 	err := r.App.ConfMgr.RegConfItem(item)
 	if err != nil {
 		// fmt.Printf("[%s]RegConf Fail: %v", item.ExtId, err)
-		panic(fmt.Errorf("[%s]RegConf Fail: %v", item.ExtId, err))
+		panic(fmt.Errorf("[%s]RegConf Fail: %v", item.GetExtId(), err))
 	}
-	return err
 }
 
-func (r *Extension) RegStrConf(key string, defv any, desc string, sendClient bool) error {
-	item := ConfItem{Key: key, Default: defv, Desc: desc, SendClient: sendClient, CheckConv: CheckConvStr}
-	return r.RegConf(item)
+func (r *Extension) RegConfs(items ...IConfItem) {
+	for _, item := range items {
+		r.RegConf(item)
+	}
 }
 
-func (r *Extension) RegIntConf(key string, defv any, desc string, sendClient bool) error {
-	item := ConfItem{Key: key, Default: defv, Desc: desc, SendClient: sendClient, CheckConv: CheckConvInt}
-	return r.RegConf(item)
+func (r *Extension) RegStrConf(key string, defv string, desc string, sendClient bool) {
+	item := TConfItem[string]{Key: key, Default: defv, Desc: desc, SendClient: sendClient, CustomCheckConv: CheckConvStr}
+	r.RegConf(&item)
 }
 
-func (r *Extension) RegMapConf(key string, defv any, desc string, sendClient bool) error {
-	item := ConfItem{Key: key, Default: defv, Desc: desc, SendClient: sendClient, CheckConv: CheckConvMap}
-	return r.RegConf(item)
-}
-
-func (r *Extension) RegListConf(key string, defv any, desc string, sendClient bool) error {
-	item := ConfItem{Key: key, Default: defv, Desc: desc, SendClient: sendClient, CheckConv: CheckConvList}
-	return r.RegConf(item)
+func (r *Extension) RegIntConf(key string, defv int, desc string, sendClient bool) {
+	item := TConfItem[int]{Key: key, Default: defv, Desc: desc, SendClient: sendClient, CustomCheckConv: CheckConvInt}
+	r.RegConf(&item)
 }
 
 func (r *Extension) RegAuth(resid AuthResId, desc string, sendClient bool) error {
