@@ -166,6 +166,13 @@ export var gutil = {
     }
     return ret;
   },
+  list2map(list, key) {
+    let ret = {};
+    for (let item of list) {
+      ret[item[key]] = item;
+    }
+    return ret;
+  },
 };
 
 // -------------------- aes 加密 ---------------------------
@@ -215,7 +222,7 @@ export class MyAes {
       let content = this.decrypt(chiperTxt);
       if (!content) return [null, '原始密文不正确'];
       return [content, null];
-    } catch(err) {
+    } catch (err) {
       console.error(err);
       return [null, '解密过程发生异常'];
     }
@@ -421,7 +428,7 @@ export class MaxCntLocker {
     this.genId = 0;
   }
 
-  poll(){
+  poll() {
     while (this.running.length < this.maxCnt) {
       let lockId = this.waiting.shift();
       if (!lockId) return;
@@ -431,7 +438,7 @@ export class MaxCntLocker {
     }
   }
 
-  acquire(){
+  acquire() {
     return new Promise((resovle) => {
       let lockId = this.genId + 1;
       // console.log('acquire', lockId);
@@ -446,7 +453,7 @@ export class MaxCntLocker {
     });
   }
 
-  release(lockId){
+  release(lockId) {
     if (!lockId) return;
     // console.log('release', lockId);
     delete this.cbs[lockId];

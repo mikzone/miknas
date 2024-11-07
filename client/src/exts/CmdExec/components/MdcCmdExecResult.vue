@@ -1,24 +1,44 @@
 <template>
   <div>
     <div v-if="state.jobItem" class="column absolute-full">
-      <q-markup-table square class="col-auto" flat dense separator="none">
-        <tbody>
-          <tr>
-            <td width="120px">cmd</td>
-            <td>
-              <pre class="td-cmd">{{ state.jobItem.cmd }}</pre>
-            </td>
-          </tr>
-          <tr>
-            <td>cwd</td>
-            <td>{{ state.jobItem.cwd }}</td>
-          </tr>
-          <tr>
-            <td>nameSpace</td>
-            <td>{{ state.jobItem.nameSpace }}</td>
-          </tr>
-        </tbody>
-      </q-markup-table>
+      <div square class="col-auto bg-teal text-white" flat dense separator="none">
+        <q-list dense>
+          <q-item>
+            <q-item-section>
+              <q-item-label :lines="2">{{ state.jobItem.title }}</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <div>
+                <q-btn dense flat round icon="info" color="white">
+                  <q-menu>
+                    <q-list>
+                      <q-item>
+                        <q-item-section>
+                          <q-item-label caption>nameSpace</q-item-label>
+                          <q-item-label>{{ state.jobItem.nameSpace }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                      <q-item>
+                        <q-item-section>
+                          <q-item-label caption>cmd</q-item-label>
+                          <q-item-label>{{ state.jobItem.cmd }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                      <q-item>
+                        <q-item-section>
+                          <q-item-label caption>cwd</q-item-label>
+                          <q-item-label>{{ state.jobItem.cwd }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </q-btn>
+                <slot name="job-header-side-btns" />
+              </div>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </div>
       <MdcAceEditor
         v-model="state.jobItem.out"
         class="col"
@@ -81,26 +101,23 @@ let extsObj = useExtension();
 const props = defineProps({
   jobId: {
     type: String,
-    required: true,
+    required: true
   },
   aceLang: {
     type: String,
-    default: 'ace/mode/text',
-  },
+    default: 'ace/mode/text'
+  }
 });
 
 const state = reactive({
   jobItem: null,
-  isUnMount: false,
+  isUnMount: false
 });
 
 const emit = defineEmits(['finishExec']);
 
 async function tryRefreshExecResult() {
-  if (
-    state.jobItem &&
-    ['done', 'canceled', 'errstop'].includes(state.jobItem.runningState)
-  ) {
+  if (state.jobItem && ['done', 'canceled', 'errstop'].includes(state.jobItem.runningState)) {
     // 如果是已经完成了的话，不用处理
     return;
   }

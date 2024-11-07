@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
@@ -321,6 +322,24 @@ func LooseCalcFolderSize(folder string) int64 {
 	_LooseCalcFolderSize(folder, env)
 	env.Wg.Wait()
 	return env.Size
+}
+
+func List2Map[T any](list []T, key string) map[string]T {
+	ret := map[string]T{}
+	for _, item := range list {
+		itemV := reflect.ValueOf(item)
+		itemKind := itemV.Kind()
+		if itemKind == reflect.Ptr {
+			itemV = itemV.Elem()
+			itemKind = itemV.Kind()
+		}
+		if itemKind != reflect.Struct {
+			panic("List2Map: item is not struct")
+		}
+		k := itemV.FieldByName(key).String()
+		ret[k] = item
+	}
+	return ret
 }
 
 func init() {

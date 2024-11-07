@@ -21,6 +21,7 @@ const JobStErrStop = "errstop"
 
 type JobItem struct {
 	JobId        string
+	Title        string
 	Uid          string
 	Cmd          *exec.Cmd
 	Cancel       context.CancelFunc
@@ -35,6 +36,7 @@ func (item *JobItem) PackClientDict(detail bool) miknas.H {
 	ret := miknas.H{
 		"jobId":        item.JobId,
 		"uid":          item.Uid,
+		"title":        item.Title,
 		"cmd":          item.Cmd.String(),
 		"cwd":          item.Cmd.Dir,
 		"nameSpace":    item.NameSpace,
@@ -248,7 +250,7 @@ func (jm *JobMgr) RunJobItem(item *JobItem) {
 	item.SetState(JobStRunning)
 	wg.Wait()
 	waitErr := c.Wait()
-	if err != nil {
+	if waitErr != nil {
 		item.FailTxt += fmt.Sprintf("Wait发生错误: %v", waitErr)
 		item.SetState(JobStErrStop)
 	} else if item.CancelUser != "" {
@@ -263,10 +265,11 @@ func GetJobMgr(ch *miknas.ContextHelper) *JobMgr {
 	return ext.JmInst
 }
 
-func NewJob(name string, arg ...string) *JobItem {
+func NewJob(title string, name string, arg ...string) *JobItem {
 	ctx, cancel := context.WithCancel(context.Background())
 	c := exec.CommandContext(ctx, name, arg...)
 	item := &JobItem{
+		Title:        title,
 		Cmd:          c,
 		Cancel:       cancel,
 		RunningState: JobStWaiting,

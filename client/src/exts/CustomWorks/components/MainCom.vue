@@ -2,7 +2,7 @@
   <div>
     <q-tabs v-model="state.tab" class="bg-green-10 text-white shadow-2" :breakpoint="0">
       <q-tab name="spaces" label="工作区" />
-      <q-tab name="defs" label="管理模板" />
+      <q-tab name="plugins" label="所有插件" />
     </q-tabs>
     <q-list v-show="state.tab === 'spaces'" separator bordered>
       <q-item
@@ -23,13 +23,16 @@
         </q-item-section>
       </q-item>
     </q-list>
-    <q-list v-show="state.tab === 'defs'" separator bordered>
-      <q-item v-for="defInfo in state.defs" :key="defInfo.DefId">
+    <q-list v-show="state.tab === 'plugins'" separator bordered>
+      <q-item v-for="defInfo in state.plugins" :key="defInfo.Id">
         <q-item-section avatar>
-          <q-icon name="folder_open" />
+          <q-icon name="settings_input_component" />
         </q-item-section>
         <q-item-section>
-          <q-item-label>{{ defInfo.DefId }}</q-item-label>
+          <q-item-label>
+            {{ defInfo.Id }}
+            <q-badge color="grey" :label="defInfo.Version" />
+          </q-item-label>
           <q-item-label caption>{{ defInfo.Desc }}</q-item-label>
         </q-item-section>
       </q-item>
@@ -48,7 +51,7 @@ const loadingMgr = useMikLoading();
 const state = reactive({
   result: {},
   spaces: {},
-  defs: {},
+  plugins: {},
   tab: 'spaces'
 });
 
@@ -67,7 +70,7 @@ async function queryResult() {
   let result = iRet.ret;
   state.result = result;
   state.spaces = result.spaces;
-  state.defs = result.defs;
+  state.plugins = result.plugins;
   loadingMgr.removeLoadingState(stateName);
 }
 

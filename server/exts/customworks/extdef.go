@@ -1,13 +1,16 @@
 package customworks
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/mikzone/miknas/server/miknas"
 )
 
 type MikNasExt struct {
 	miknas.Extension
-	WorkDefMap  map[string]*WorkDef
-	SpaceDefMap map[string]*SpaceDef
+	PluginDefMap map[string]*PluginDef
+	SpaceDefMap  map[string]*SpaceDef
 }
 
 const MExtId = "CustomWorks"
@@ -15,7 +18,7 @@ const MExtId = "CustomWorks"
 func New() *MikNasExt {
 	return &MikNasExt{
 		miknas.NewExtension(MExtId),
-		make(map[string]*WorkDef),
+		make(map[string]*PluginDef),
 		make(map[string]*SpaceDef),
 	}
 }
@@ -24,23 +27,22 @@ func (ext *MikNasExt) OnBind() {
 	// you can register config, auth, routes in here
 	ext.RegAuth(ext.Res("vist"), "使用CustomWorks", false)
 	ext.RegConfs(
-		miknas.NewConfItem("CUSTOM_WORKS_PLUGINS", []string{}, "CustomWorks相关定义文件列表", false),
-		miknas.NewConfItem("CUSTOM_WORKS_SPACES", []SpaceDef{}, "CustomWorks相关实例目录列表", false),
+		miknas.NewConfItem("CUSTOM_WORKS_PLUGINS", []string{}, "CustomWorks插件定义文件列表", false),
+		miknas.NewConfItem("CUSTOM_WORKS_SPACES", []SpaceDef{}, "CustomWorks工作区列表", false),
 	)
 	regRoutes(ext)
 }
 
-func (ext *MikNasExt) scanDefs() {
+func (ext *MikNasExt) scanPlugins() {
 	ConfMgr := ext.App.ConfMgr
 	defFiles := ConfMgr.Get("CUSTOM_WORKS_PLUGINS").([]string)
 	for _, defFile := range defFiles {
-		workDef, err := ReadWorkDef(defFile)
+		pluginDef, err := ReadPluginDef(defFile)
 		if err != nil {
-			ext.Logger().Warn("ReadWorkDefFail", "file", defFile, "err", err)
-			continue
+			panic(fmt.Errorf("ReadPluginDefFail, file: %s, error: %v", defFile, err))
 		}
-		ext.Logger().Info("ReadWorkDefSuccess", "file", defFile, "DefId", workDef.DefId)
-		ext.WorkDefMap[workDef.DefId] = workDef
+		ext.Logger().Info("RegPluginDef", "file", defFile, "PluginId", pluginDef.Id)
+		ext.PluginDefMap[pluginDef.Id] = pluginDef
 	}
 }
 
@@ -48,18 +50,15 @@ func (ext *MikNasExt) scanSpaces() {
 	ConfMgr := ext.App.ConfMgr
 	spaceDefs := ConfMgr.Get("CUSTOM_WORKS_SPACES").([]SpaceDef)
 	for _, spaceDef := range spaceDefs {
-		// err := ReadSpaceExt(&spaceDef)
-		// if err != nil {
-		// 	ext.Logger().Warn("ReadSpaceExtFail", "SpaceDef", spaceDef, "err", err)
-		// 	continue
-		// }
-		// workDefId := spaceDef.Ext.WorkDefId
-		// _, ok := ext.WorkDefMap[workDefId]
-		// if !ok {
-		// 	ext.Logger().Warn("ReadSpaceExtFail", "SpaceDef", spaceDef, "err", "WorkDefId not found", "WorkDefId", workDefId)
-		// 	continue
-		// }
-		ext.Logger().Info("ReadSpaceExtSuccess", "SpaceDef", spaceDef)
+		_, err := os.Stat(spaceDef.Path)
+		if err != nil {
+			panic(fmt.Errorf("ScanSpaceFail, SpaceId: %v, Path(%v) is not exist", spaceDef.Id, spaceDef.Path))
+		}
+		_, ok := ext.SpaceDefMap[spaceDef.Id]
+		if ok {
+			panic(fmt.Errorf("ScanSpaceFail, SpaceId: %v is already registed", spaceDef.Id))
+		}
+		ext.Logger().Info("ReadSpaceSuccess", "SpaceDef", spaceDef)
 		ext.SpaceDefMap[spaceDef.Id] = &spaceDef
 	}
 }
@@ -67,7 +66,7 @@ func (ext *MikNasExt) scanSpaces() {
 func (ext *MikNasExt) OnInit() {
 	// only in init, you can access db, workspace, loaded configs
 	// you can register your filespace, init your db here
-	ext.scanDefs()
+	ext.scanPlugins()
 	ext.scanSpaces()
 	regCwFileSpace(ext)
 }

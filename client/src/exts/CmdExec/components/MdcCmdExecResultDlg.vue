@@ -13,13 +13,6 @@
       style="width: 1200px; max-width: 80vw"
       class="bg-primary text-white"
     >
-      <q-header class="bg-secondary text-white">
-        <q-toolbar>
-          <q-toolbar-title> 运行情况 </q-toolbar-title>
-          <q-btn icon="close" flat round dense @click="onCloseDlg"></q-btn>
-        </q-toolbar>
-      </q-header>
-
       <q-page-container>
         <q-page>
           <MdcCmdExecResult
@@ -28,7 +21,11 @@
             :job-id="props.jobId"
             :ace-lang="props.aceLang"
             @finish-exec="onFinishExec"
-          ></MdcCmdExecResult>
+          >
+            <template #job-header-side-btns>
+              <q-btn icon="close" flat round dense color="white" @click="onCloseDlg"></q-btn>
+            </template>
+          </MdcCmdExecResult>
         </q-page>
       </q-page-container>
     </q-layout>
@@ -44,11 +41,10 @@ import MdcCmdExecResult from './MdcCmdExecResult.vue';
 defineEmits([
   // REQUIRED; need to specify some events that your
   // component will emit through useDialogPluginComponent()
-  ...useDialogPluginComponent.emits,
+  ...useDialogPluginComponent.emits
 ]);
 
-const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
-  useDialogPluginComponent();
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 // dialogRef      - Vue ref to be applied to QDialog
 // onDialogHide   - Function to be used as handler for @hide on QDialog
 // onDialogOK     - Function to call to settle dialog with "ok" outcome
@@ -59,16 +55,16 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const props = defineProps({
   jobId: {
     type: String,
-    required: true,
+    required: true
   },
   aceLang: {
     type: String,
-    default: 'ace/mode/text',
-  },
+    default: 'ace/mode/text'
+  }
 });
 
 const state = reactive({
-  jobItem: undefined,
+  jobItem: undefined
 });
 
 function onFinishExec(jobItem) {

@@ -1,31 +1,47 @@
 package customworks
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/mikzone/miknas/server/miknas"
 	"github.com/pelletier/go-toml/v2"
 )
 
-type WorkActionDef struct {
-	Id    string
-	Name  string
-	Form  [](map[string]any)
-	Shell map[string]any
+type PluginActionCmdDef struct {
+	Path string
+	Args []string
 }
 
-type WorkDef struct {
-	DefId   string
+type PluginJobFormDef struct {
+	ConfirmLabel string `toml:"confirmLabel"`
+	FormConfs    []any  `toml:"formConfs"`
+}
+
+type PluginJobDef struct {
+	Id   string
+	Name string
+	Form PluginJobFormDef
+	Cmd  PluginActionCmdDef
+}
+
+type PluginDef struct {
+	Id      string
+	Title   string
 	Desc    string
-	Actions []WorkActionDef
+	Anchor  string
+	Version string
+	Jobs    []*PluginJobDef
+	JobMap  map[string]*PluginJobDef
 }
 
-func ReadWorkDef(file string) (*WorkDef, error) {
+func ReadPluginJobDef(file string) (*PluginJobDef, error) {
 	fileBytes, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
-	var ret WorkDef
+	var ret PluginJobDef
 	err = toml.Unmarshal(fileBytes, &ret)
 	if err != nil {
 		return nil, err
@@ -33,28 +49,50 @@ func ReadWorkDef(file string) (*WorkDef, error) {
 	return &ret, nil
 }
 
-type SpaceExtDef struct {
-	// ExtDef 定义在目录对应的文件里
-	WorkDefId string
+const mLenTomlExt = len(".toml")
+
+func ReadPluginDef(file string) (*PluginDef, error) {
+	fileBytes, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	var ret PluginDef
+	err = toml.Unmarshal(fileBytes, &ret)
+	if err != nil {
+		return nil, err
+	}
+	// 扫描jobs文件夹里的所有toml文件
+	jobsDir := filepath.Join(filepath.Dir(file), "jobs")
+	err = filepath.Walk(jobsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if filepath.Ext(path) != ".toml" {
+			return nil
+		}
+		job, err := ReadPluginJobDef(path)
+		if err != nil {
+			return fmt.Errorf("ReadPluginJobDefFail, file: %s, error: %v", path, err)
+		}
+		baseName := filepath.Base(path)
+		job.Id = baseName[:len(baseName)-mLenTomlExt]
+		ret.Jobs = append(ret.Jobs, job)
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("walk jobs fail: %v", err)
+	}
+
+	ret.JobMap = miknas.List2Map(ret.Jobs, "Id")
+	return &ret, nil
 }
 
 type SpaceDef struct {
-	Id   string
-	Name string
-	Path string
-}
-
-func ReadSpaceExt(sp *SpaceDef) error {
-	path := filepath.Join(sp.Path, ".custom_work_space.toml")
-	fileBytes, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	var ret SpaceExtDef
-	err = toml.Unmarshal(fileBytes, &ret)
-	if err != nil {
-		return err
-	}
-	// sp.Ext = ret
-	return nil
+	Id      string
+	Name    string
+	Path    string
+	Plugins []string
 }

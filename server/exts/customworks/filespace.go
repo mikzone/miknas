@@ -6,6 +6,8 @@ type CwFileSpace struct {
 	miknas.SimpleFileSpace
 }
 
+const MFsType = "Cw"
+
 func (fsp *CwFileSpace) Ensure(ch *miknas.ContextHelper, mode string) {
 	if mode != "r" {
 		panic(miknas.NewFailRet("工作区没有%s权限", mode))
@@ -24,7 +26,7 @@ func (fsp *CwFileSpace) NewFsDriver(ch *miknas.ContextHelper, fssubid string) mi
 
 func regCwFileSpace(ext *MikNasExt) {
 	CwFileSpace := &CwFileSpace{
-		*miknas.NewSimpleFileSpace("Cw", "", ext.Res("nouse")),
+		*miknas.NewSimpleFileSpace(MFsType, "", ext.Res("nouse")),
 	}
 	ext.RegFileSpace(CwFileSpace)
 }

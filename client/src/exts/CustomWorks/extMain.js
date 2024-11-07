@@ -8,7 +8,7 @@ const EXTS_ID = 'CustomWorks';
 export const useExtension = defineExtension({
   id: EXTS_ID,
   title: '自定义工作空间',
-  desc: '在自定义的目录下，调用自己的脚本',
+  desc: '在自定义的目录下，使用插件管理相关的工作目录',
   icon: 'work',
   // 定义扩展是否有首页，boolean值，缺省则为true
   index: true,
@@ -33,9 +33,8 @@ export const useExtension = defineExtension({
         {
           path: 'view/:spaceId/:routeSubPath(.*)?',
           name: extsObj.routeName('view'),
-          component: () => import('../Drive/shares').then((module) => module['CommonExplorerPage']),
-          // component: () => import('./pages/IndexPage.vue'),
-          props: route => ({ fsid: `Cw_${route.params.spaceId}`, fsrela: route.params.routeSubPath, kind: 'view' }),
+          component: () => import('./pages/ExplorerPage.vue'),
+          props: route => ({ spaceId: route.params.spaceId, fspath: route.params.routeSubPath, kind: 'view' }),
         },
         {
           path: 'list/:spaceId/:routeSubPath(.*)?',
@@ -43,7 +42,7 @@ export const useExtension = defineExtension({
             fsViewRouteName: extsObj.routeName('view'),
           },
           component: () => import('./pages/ExplorerPage.vue'),
-          props: route => ({ fsid: `Cw_${route.params.spaceId}`, fsrela: route.params.routeSubPath, kind: 'list' }),
+          props: route => ({ spaceId: route.params.spaceId, fspath: route.params.routeSubPath, kind: 'list' }),
         },
       ],
     }
