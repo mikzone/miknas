@@ -128,10 +128,11 @@ func queryPluginDef(ch *miknas.ContextHelper) {
 }
 
 type inDataExecPluginJob struct {
-	SpaceId  string `json:"spaceId" binding:"required"`
-	PluginId string `json:"pluginId" binding:"required"`
-	JobId    string `json:"jobId" binding:"required"`
-	Fspath   string `json:"fspath"`
+	SpaceId  string          `json:"spaceId" binding:"required"`
+	PluginId string          `json:"pluginId" binding:"required"`
+	JobId    string          `json:"jobId" binding:"required"`
+	Fspath   string          `json:"fspath"`
+	FormData *map[string]any `json:"formData"`
 }
 
 func execPluginJob(ch *miknas.ContextHelper) {
@@ -164,11 +165,37 @@ func execPluginJob(ch *miknas.ContextHelper) {
 		ch.FailResp("当前不在插件可管辖的目录下")
 		return
 	}
+	needEnv := []string{}
+	if len(jobDef.Form.FormConfs) > 0 {
+		if loc.FormData == nil {
+			ch.SucResp(map[string]any{
+				"form":       jobDef.Form,
+				"nextAction": "FillForm",
+			})
+			return
+		} else {
+			formData := *loc.FormData
+			for _, conf := range jobDef.Form.FormConfs {
+				key := conf["id"].(string)
+				val, ok := formData[key]
+				if !ok {
+					ch.FailResp("表单数据不完整")
+					return
+				}
+				needEnv = append(needEnv, fmt.Sprintf("CW_PARAM_%s=%v", key, val))
+			}
+		}
+	}
 	title := fmt.Sprintf("%s-%s", pluginDef.Title, jobDef.Name)
 	jobItem := cmdexec.NewJob(title, jobDef.Cmd.Path, jobDef.Cmd.Args...)
 	jobItem.Cmd.Dir = pluginCurPath
+	jobItem.Cmd.Env = append(os.Environ(), needEnv...)
 	cmdexec.SubmitJob(ch, jobItem)
-	ch.SucResp(jobItem.PackClientDict(false))
+	ch.SucResp(map[string]any{
+		"jobInfo":    jobItem.PackClientDict(false),
+		"nextAction": "ShowExec",
+		"needEnv":    needEnv,
+	})
 }
 
 func regRoutes(ext *MikNasExt) {

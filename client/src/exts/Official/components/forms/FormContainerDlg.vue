@@ -33,7 +33,7 @@
             <span class="text-caption block" v-html="confItem.desc"></span>
             <div>
               <component
-                :is="confItem.component"
+                :is="getConfItemComponent(confItem)"
                 v-bind="confItem.componentProps"
                 v-model="myform.state.formData[confItem.id]"
                 :conf-item="confItem"
@@ -50,15 +50,15 @@
 <script setup>
 import { useFormView } from 'miknas/exts/Official/shares';
 import { useDialogPluginComponent } from 'quasar';
+import { FormTypes } from '../../shares';
 
 defineEmits([
   // REQUIRED; need to specify some events that your
   // component will emit through useDialogPluginComponent()
-  ...useDialogPluginComponent.emits,
+  ...useDialogPluginComponent.emits
 ]);
 
-const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
-  useDialogPluginComponent();
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 // dialogRef      - Vue ref to be applied to QDialog
 // onDialogHide   - Function to be used as handler for @hide on QDialog
 // onDialogOK     - Function to call to settle dialog with "ok" outcome
@@ -69,22 +69,22 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const props = defineProps({
   title: {
     type: String,
-    default: '填写表单',
+    default: '填写表单'
   },
   formConfs: {
     type: Array,
-    required: true,
+    required: true
   },
   initData: {
     type: Object,
     default: () => {
       return {};
-    },
+    }
   },
   confirmLabel: {
     type: String,
-    default: '确认',
-  },
+    default: '确认'
+  }
 });
 
 const myform = useFormView(props.formConfs, props.initData);
@@ -94,6 +94,14 @@ function onCloseDlg() {
   // MikCall.makeConfirm('尚未完成当前表单，是否确认关闭？', () => {
   //   onDialogCancel();
   // });
+}
+
+function getConfItemComponent(confItem) {
+  let component = confItem.component;
+  if (typeof component == 'string') {
+    return FormTypes[component];
+  }
+  return component;
 }
 
 function onSubmit() {

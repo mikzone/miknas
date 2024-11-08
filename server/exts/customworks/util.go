@@ -15,8 +15,8 @@ type PluginActionCmdDef struct {
 }
 
 type PluginJobFormDef struct {
-	ConfirmLabel string `toml:"confirmLabel"`
-	FormConfs    []any  `toml:"formConfs"`
+	ConfirmLabel string             `toml:"confirmLabel" json:"confirmLabel"`
+	FormConfs    [](map[string]any) `toml:"formConfs" json:"formConfs"`
 }
 
 type PluginJobDef struct {

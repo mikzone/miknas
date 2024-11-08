@@ -28,6 +28,7 @@ import { useExtension } from '../extMain';
 import { useMikLoading } from 'miknas/exts/Official/shares';
 import { MikCall } from 'miknas/utils';
 import { fetchResult } from 'miknas/exts/CmdExec/exec_cmd_util';
+import { coOpenFormDlg } from 'miknas/exts/Official/shares';
 // import { useWorkStore } from '../stores/work';
 
 // const workStore = useWorkStore();
@@ -56,7 +57,7 @@ const props = defineProps({
 
 const extsObj = useExtension();
 
-async function execJob(jobId) {
+async function execJob(jobId, formData) {
   let jobConf = props.pluginDetail.pluginDef._jobMap[jobId];
   if (!jobConf) return;
   let stateName = `正在请求执行`;
@@ -65,7 +66,8 @@ async function execJob(jobId) {
     spaceId: props.spaceId,
     fspath: props.fspath,
     pluginId: props.pluginDetail.pluginId,
-    jobId: jobId
+    jobId: jobId,
+    formData: formData
   });
   loadingMgr.removeLoadingState(stateName);
   if (!iRet.suc) {
@@ -73,11 +75,19 @@ async function execJob(jobId) {
     return;
   }
   let result = iRet.ret;
-  let execJobId = result.jobId;
-  if (!execJobId) {
-    MikCall.sendErrorTips('执行错误，创建Job失败');
-    return;
+  if (result.nextAction == 'ShowExec') {
+    let jobInfo = result.jobInfo;
+    let execJobId = jobInfo.jobId;
+    if (!execJobId) {
+      MikCall.sendErrorTips('执行错误，创建Job失败');
+      return;
+    }
+    fetchResult({ jobId: execJobId });
+  } else if (result.nextAction == 'FillForm') {
+    console.log('FillForm', result.form);
+    let [isOk, newFormData] = await coOpenFormDlg(result.form);
+    if (!isOk) return;
+    return await execJob(jobId, newFormData);
   }
-  fetchResult({ jobId: execJobId });
 }
 </script>
