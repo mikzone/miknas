@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/mikzone/miknas/server/miknas"
 	"github.com/panjf2000/ants/v2"
@@ -32,7 +34,33 @@ type JobItem struct {
 	FailTxt      string
 }
 
-func (item *JobItem) PackClientDict(detail bool) miknas.H {
+const mPackBytes = 128 * 1024
+
+func (item *JobItem) PackClientStdOut(start int) miknas.H {
+	if start < 0 {
+		// 小于0，表示由系统自己决定从哪里开始读取
+		start = len(item.OutTxt) - mPackBytes
+		if start < 0 {
+			start = 0
+		} else {
+			// 找该位置后面首个换行符
+			idx := strings.IndexRune(item.OutTxt[start:], '\n')
+			if idx >= 0 {
+				// 这么长的字符串都找不到换行符，是有点奇怪
+				start = start + idx + 1
+			}
+		}
+	}
+	txt := item.OutTxt[start:]
+	ret := miknas.H{
+		"start": start, // 开始idx
+		"txt":   txt,
+		"end":   start + len(txt) - 1, // 结束的idx
+	}
+	return ret
+}
+
+func (item *JobItem) PackClientDict() miknas.H {
 	ret := miknas.H{
 		"jobId":        item.JobId,
 		"uid":          item.Uid,
@@ -43,9 +71,6 @@ func (item *JobItem) PackClientDict(detail bool) miknas.H {
 		"runningState": item.RunningState,
 		"cancelUser":   item.CancelUser,
 		"failtxt":      item.FailTxt,
-	}
-	if detail {
-		ret["out"] = item.OutTxt
 	}
 	return ret
 }
@@ -128,7 +153,7 @@ func (jm *JobMgr) AddJob(item *JobItem) {
 	}
 }
 
-func (jm *JobMgr) TryStopJob(ch *miknas.ContextHelper, jobid string) error {
+func (jm *JobMgr) TryStopJob(ch *miknas.ContextHelper, jobid string, killType string) error {
 	item, exist := jm.Jobs[jobid]
 	if !exist {
 		return miknas.NewFailRet("jobid(%s) is not exist", jobid)
@@ -143,7 +168,15 @@ func (jm *JobMgr) TryStopJob(ch *miknas.ContextHelper, jobid string) error {
 		item.SetState(JobStCanceled)
 	} else if item.CheckInState(JobStRunning) {
 		item.FailTxt += fmt.Sprintf("[用户 %s 取消了该任务]", uid)
-		item.Cancel()
+		if killType == "terminate" {
+			item.Cmd.Process.Signal(syscall.SIGTERM)
+		} else if killType == "kill" {
+			item.Cmd.Process.Signal(syscall.SIGKILL)
+		} else if killType == "SIGINT" {
+			item.Cmd.Process.Signal(syscall.SIGINT)
+		} else {
+			item.Cancel()
+		}
 	}
 	return nil
 }

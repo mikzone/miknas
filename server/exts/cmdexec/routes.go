@@ -4,26 +4,29 @@ import (
 	"github.com/mikzone/miknas/server/miknas"
 )
 
-type inDataJobId struct {
-	JobId string `json:"jobId" binding:"required"`
+type inDataQueryJob struct {
+	JobId           string `json:"jobId" binding:"required"`
+	ReadStdoutStart int    `json:"readStdoutStart"`
 }
 
 func queryJobResult(ch *miknas.ContextHelper) {
-	var loc inDataJobId
+	var loc inDataQueryJob
 	ch.BindJSON(&loc)
 	jm := GetJobMgr(ch)
 	jobItem, exist := jm.Jobs[loc.JobId]
 	if !exist {
 		ch.FailResp("jobid(%s)不存在", loc.JobId)
 	}
-	ch.SucResp(jobItem.PackClientDict(true))
+	ret := jobItem.PackClientDict()
+	ret["stdoutInfo"] = jobItem.PackClientStdOut(loc.ReadStdoutStart)
+	ch.SucResp(ret)
 }
 
 func queryAllJobs(ch *miknas.ContextHelper) {
 	jm := GetJobMgr(ch)
 	ret := miknas.H{}
 	for jobId, jobItem := range jm.Jobs {
-		ret[jobId] = jobItem.PackClientDict(false)
+		ret[jobId] = jobItem.PackClientDict()
 	}
 	ch.SucResp(ret)
 }
@@ -37,7 +40,7 @@ func reqCancelJob(ch *miknas.ContextHelper) {
 	var loc inDataCancelJob
 	ch.BindJSON(&loc)
 	jm := GetJobMgr(ch)
-	err := jm.TryStopJob(ch, loc.JobId)
+	err := jm.TryStopJob(ch, loc.JobId, loc.KillType)
 	ch.EnsureNoErr(err)
 	ch.SucResp("取消成功")
 }

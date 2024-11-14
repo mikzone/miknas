@@ -34,6 +34,7 @@ type PluginDef struct {
 	Version string
 	Jobs    []*PluginJobDef
 	JobMap  map[string]*PluginJobDef
+	RootDir string
 }
 
 func ReadPluginJobDef(file string) (*PluginJobDef, error) {
@@ -62,7 +63,8 @@ func ReadPluginDef(file string) (*PluginDef, error) {
 		return nil, err
 	}
 	// 扫描jobs文件夹里的所有toml文件
-	jobsDir := filepath.Join(filepath.Dir(file), "jobs")
+	rootDir := filepath.Dir(file)
+	jobsDir := filepath.Join(rootDir, "jobs")
 	err = filepath.Walk(jobsDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -87,6 +89,11 @@ func ReadPluginDef(file string) (*PluginDef, error) {
 	}
 
 	ret.JobMap = miknas.List2Map(ret.Jobs, "Id")
+	absRootDir, err := filepath.Abs(rootDir)
+	if err != nil {
+		return nil, fmt.Errorf("get abs root dir fail: %v", err)
+	}
+	ret.RootDir = absRootDir
 	return &ret, nil
 }
 

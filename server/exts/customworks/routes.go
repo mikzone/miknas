@@ -165,7 +165,11 @@ func execPluginJob(ch *miknas.ContextHelper) {
 		ch.FailResp("当前不在插件可管辖的目录下")
 		return
 	}
-	needEnv := []string{}
+	needEnv := []string{
+		fmt.Sprintf("CW_PLUGIN_WORK_ROOT=%s", pluginRootPath),
+		fmt.Sprintf("CW_PLUGIN_WORK_DIR=%s", pluginCurPath),
+		fmt.Sprintf("CW_PLUGIN_DEF_ROOT=%s", pluginDef.RootDir),
+	}
 	if len(jobDef.Form.FormConfs) > 0 {
 		if loc.FormData == nil {
 			ch.SucResp(map[string]any{
@@ -192,7 +196,7 @@ func execPluginJob(ch *miknas.ContextHelper) {
 	jobItem.Cmd.Env = append(os.Environ(), needEnv...)
 	cmdexec.SubmitJob(ch, jobItem)
 	ch.SucResp(map[string]any{
-		"jobInfo":    jobItem.PackClientDict(false),
+		"jobInfo":    jobItem.PackClientDict(),
 		"nextAction": "ShowExec",
 		"needEnv":    needEnv,
 	})

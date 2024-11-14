@@ -40,7 +40,7 @@
         </q-list>
       </div>
       <MdcAceEditor
-        v-model="state.jobItem.out"
+        v-model="state.stdoutInfo.txt"
         class="col"
         auto-scroll-to-end
         :ace-lang="props.aceLang"
@@ -79,7 +79,16 @@
                     clickable
                     @click="tryCancel(state.jobItem.jobId, 'terminate')"
                   >
-                    <q-item-section>终止任务</q-item-section>
+                    <q-item-section>终止任务(terminate)</q-item-section>
+                  </q-item>
+                  <q-item v-close-popup clickable @click="tryCancel(state.jobItem.jobId, 'kill')">
+                    <q-item-section>终止任务(kill)</q-item-section>
+                  </q-item>
+                  <q-item v-close-popup clickable @click="tryCancel(state.jobItem.jobId, 'none')">
+                    <q-item-section>终止任务(none)</q-item-section>
+                  </q-item>
+                  <q-item v-close-popup clickable @click="tryCancel(state.jobItem.jobId, 'SIGINT')">
+                    <q-item-section>终止任务(SIGINT)</q-item-section>
                   </q-item>
                 </q-list>
               </q-menu>
@@ -103,6 +112,11 @@ const props = defineProps({
     type: String,
     required: true
   },
+  initReadStdoutStart: {
+    // 从那个位置开始读取输出
+    type: Number,
+    default: -1
+  },
   aceLang: {
     type: String,
     default: 'ace/mode/text'
@@ -111,6 +125,12 @@ const props = defineProps({
 
 const state = reactive({
   jobItem: null,
+  stdoutInfo: {
+    // 聚合的stdout
+    start: undefined,
+    end: undefined,
+    txt: ''
+  },
   isUnMount: false
 });
 
@@ -122,7 +142,16 @@ async function tryRefreshExecResult() {
     return;
   }
   if (!props.jobId) return;
-  let reqArgs = { jobId: props.jobId };
+  let readStdoutStart;
+  if (state.stdoutInfo.end === undefined) {
+    readStdoutStart = props.initReadStdoutStart;
+  } else {
+    readStdoutStart = state.stdoutInfo.end + 1;
+  }
+  let reqArgs = {
+    jobId: props.jobId,
+    readStdoutStart: readStdoutStart
+  };
   let iRet = await extsObj.mcpost('queryJobResult', reqArgs);
   if (!iRet.suc) {
     MikCall.alertRespErrMsg(iRet);
@@ -130,6 +159,20 @@ async function tryRefreshExecResult() {
   }
   let newJobItem = iRet.ret;
   state.jobItem = newJobItem;
+  if (state.stdoutInfo.end === undefined) {
+    // 首次初始化，使用服务端传来的值
+    state.stdoutInfo.start = newJobItem.stdoutInfo.start;
+    state.stdoutInfo.end = newJobItem.stdoutInfo.end;
+    state.stdoutInfo.txt = newJobItem.stdoutInfo.txt;
+    // console.log('newJobItem1', newJobItem.stdoutInfo);
+  } else if (state.stdoutInfo.end + 1 == newJobItem.stdoutInfo.start) {
+    // 将文本拼接起来
+    if (newJobItem.stdoutInfo.txt.length > 0) {
+      state.stdoutInfo.end = newJobItem.stdoutInfo.end;
+      state.stdoutInfo.txt += newJobItem.stdoutInfo.txt;
+      // console.log('newJobItem2', newJobItem.stdoutInfo);
+    }
+  }
   if (!['done', 'canceled', 'errstop'].includes(newJobItem.runningState)) {
     if (!state.isUnMount) setTimeout(tryRefreshExecResult, 200);
   } else {
