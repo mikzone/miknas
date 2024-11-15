@@ -14,13 +14,20 @@ type PluginActionCmdDef struct {
 	Args []string
 }
 
+type FormSelectOptionDef struct {
+	Label string `toml:"label" json:"label"`
+	Value string `toml:"value" json:"value"`
+}
+
 type FormConfDef struct {
-	Id             string         `toml:"id" json:"id"`
-	Title          string         `toml:"title" json:"title"`
-	Component      string         `toml:"component" json:"component"`
-	Default        string         `toml:"default" json:"default"`
-	Desc           string         `toml:"desc" json:"desc"`
-	ComponentProps map[string]any `toml:"componentProps" json:"componentProps"`
+	Id             string                 `toml:"id" json:"id"`
+	Title          string                 `toml:"title" json:"title"`
+	Component      string                 `toml:"component" json:"component"`
+	Default        string                 `toml:"default" json:"default"`
+	Desc           string                 `toml:"desc" json:"desc"`
+	ComponentProps map[string]any         `toml:"componentProps" json:"componentProps"`
+	SelectOptions  *[]FormSelectOptionDef `toml:"selectOptions" json:"selectOptions"`
+	HintList       []string               `toml:"hintList" json:"hintList"` // 在MdcTextAutoComplete组件中显示的候选词
 }
 
 type PluginJobFormDef struct {
@@ -37,14 +44,15 @@ type PluginJobDef struct {
 }
 
 type PluginDef struct {
-	Id      string
-	Title   string
-	Desc    string
-	Anchor  string
-	Version string
-	Jobs    []*PluginJobDef
-	JobMap  map[string]*PluginJobDef
-	RootDir string
+	Id            string
+	Title         string
+	Desc          string
+	Anchor        string
+	ShowInSubDirs bool
+	Version       string
+	Jobs          []*PluginJobDef
+	JobMap        map[string]*PluginJobDef
+	RootDir       string
 }
 
 func ReadPluginJobDef(file string) (*PluginJobDef, error) {

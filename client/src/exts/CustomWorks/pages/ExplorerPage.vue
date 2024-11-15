@@ -12,7 +12,11 @@
         </div>
       </div>
       <div v-if="props.kind == 'list'" class="col-12">
-        <FolderPluginsView :space-id="props.spaceId" :fspath="props.fspath"></FolderPluginsView>
+        <FolderPluginsView
+          :key="`${props.spaceId}_${props.fspath}`"
+          :space-id="props.spaceId"
+          :fspath="props.fspath"
+        ></FolderPluginsView>
       </div>
     </div>
   </q-page>

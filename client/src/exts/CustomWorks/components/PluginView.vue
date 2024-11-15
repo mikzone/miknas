@@ -84,8 +84,11 @@ async function execJob(jobId, formData) {
     }
     fetchResult({ jobId: execJobId });
   } else if (result.nextAction == 'FillForm') {
-    console.log('FillForm', result.form);
-    let [isOk, newFormData] = await coOpenFormDlg(result.form);
+    let formProps = result.form;
+    if (!formProps.title) {
+      formProps.title = jobConf.Name;
+    }
+    let [isOk, newFormData] = await coOpenFormDlg(formProps);
     if (!isOk) return;
     return await execJob(jobId, newFormData);
   }

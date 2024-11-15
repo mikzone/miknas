@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mikzone/miknas/server/exts/cmdexec"
 	"github.com/mikzone/miknas/server/miknas"
@@ -58,7 +59,7 @@ func maininfo(ch *miknas.ContextHelper) {
 	ch.SucResp(ret)
 }
 
-func FindPathHolder(absRootPath, curPath, targetName string) (string, error) {
+func FindPathHolder(absRootPath, curPath, targetName string, travelParent bool) (string, error) {
 	// 遍历curPath以及它的父节点，找出直接有targetName的文件
 	curPath = filepath.Join(absRootPath, curPath)
 	checkPath, err := filepath.Abs(curPath)
@@ -68,11 +69,14 @@ func FindPathHolder(absRootPath, curPath, targetName string) (string, error) {
 	for {
 		fp := filepath.Join(checkPath, targetName)
 		_, err := os.Stat(fp)
-		if err != nil {
+		if err == nil {
 			return checkPath, nil
 		}
+		if !travelParent {
+			return "", fmt.Errorf("当前目录没有%s", targetName)
+		}
 		if checkPath == absRootPath || checkPath == "/" || checkPath == "" {
-			return "", fmt.Errorf("向上搜索找不到%s", targetName)
+			return "", fmt.Errorf("向上搜索也找不到%s", targetName)
 		}
 		checkPath = filepath.Dir(checkPath)
 	}
@@ -100,7 +104,7 @@ func queryFolderDetail(ch *miknas.ContextHelper) {
 		if anchor == "" {
 			continue
 		}
-		pluginRootPath, err := FindPathHolder(absRootPath, loc.Fspath, anchor)
+		pluginRootPath, err := FindPathHolder(absRootPath, loc.Fspath, anchor, pluginDef.ShowInSubDirs)
 		if err != nil || pluginRootPath == "" {
 			continue
 		}
@@ -160,7 +164,7 @@ func execPluginJob(ch *miknas.ContextHelper) {
 		return
 	}
 	pluginCurPath := filepath.Join(absRootPath, loc.Fspath)
-	pluginRootPath, err := FindPathHolder(absRootPath, loc.Fspath, pluginDef.Anchor)
+	pluginRootPath, err := FindPathHolder(absRootPath, loc.Fspath, pluginDef.Anchor, pluginDef.ShowInSubDirs)
 	if err != nil || pluginRootPath == "" {
 		ch.FailResp("当前不在插件可管辖的目录下")
 		return
@@ -186,7 +190,28 @@ func execPluginJob(ch *miknas.ContextHelper) {
 					ch.FailResp("表单数据不完整")
 					return
 				}
-				needEnv = append(needEnv, fmt.Sprintf("CW_PARAM_%s=%v", key, val))
+				if conf.SelectOptions != nil {
+					valStr, ok := val.(string)
+					if !ok {
+						ch.FailResp("表单数据不完整")
+						return
+					}
+					isInValues := false
+					for _, option := range *conf.SelectOptions {
+						if valStr == option.Value {
+							isInValues = true
+							break
+						}
+					}
+					if !isInValues {
+						ch.FailResp("表单数据项(%s)的值不在可选访问内", conf.Title)
+						return
+					}
+				}
+
+				if strings.HasPrefix(key, "CW_PARAM_") {
+					needEnv = append(needEnv, fmt.Sprintf("%s=%v", key, val))
+				}
 			}
 		}
 	}
