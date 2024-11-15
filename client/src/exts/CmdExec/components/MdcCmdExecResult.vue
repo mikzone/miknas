@@ -75,20 +75,16 @@
               <q-menu>
                 <q-list style="min-width: 100px">
                   <q-item
+                    v-for="killType in KILL_TYPES"
+                    :key="killType"
                     v-close-popup
                     clickable
-                    @click="tryCancel(state.jobItem.jobId, 'terminate')"
+                    @click="tryCancel(state.jobItem.jobId, killType)"
                   >
-                    <q-item-section>终止任务(terminate)</q-item-section>
+                    <q-item-section>发送信号: {{ killType }}</q-item-section>
                   </q-item>
-                  <q-item v-close-popup clickable @click="tryCancel(state.jobItem.jobId, 'kill')">
-                    <q-item-section>终止任务(kill)</q-item-section>
-                  </q-item>
-                  <q-item v-close-popup clickable @click="tryCancel(state.jobItem.jobId, 'none')">
-                    <q-item-section>终止任务(none)</q-item-section>
-                  </q-item>
-                  <q-item v-close-popup clickable @click="tryCancel(state.jobItem.jobId, 'SIGINT')">
-                    <q-item-section>终止任务(SIGINT)</q-item-section>
+                  <q-item v-close-popup clickable @click="tryCancel(state.jobItem.jobId, 'NONE')">
+                    <q-item-section>结束任务</q-item-section>
                   </q-item>
                 </q-list>
               </q-menu>
@@ -133,6 +129,8 @@ const state = reactive({
   },
   isUnMount: false
 });
+
+const KILL_TYPES = ['SIGKILL', 'SIGTERM', 'SIGINT'];
 
 const emit = defineEmits(['finishExec']);
 

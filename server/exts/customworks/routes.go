@@ -180,7 +180,7 @@ func execPluginJob(ch *miknas.ContextHelper) {
 		} else {
 			formData := *loc.FormData
 			for _, conf := range jobDef.Form.FormConfs {
-				key := conf["id"].(string)
+				key := conf.Id
 				val, ok := formData[key]
 				if !ok {
 					ch.FailResp("表单数据不完整")

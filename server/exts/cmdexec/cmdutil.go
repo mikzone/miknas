@@ -153,6 +153,15 @@ func (jm *JobMgr) AddJob(item *JobItem) {
 	}
 }
 
+func signalToJobItem(item *JobItem) {
+}
+
+var killType2Signal = map[string]syscall.Signal{
+	"SIGINT":  syscall.SIGINT,
+	"SIGTERM": syscall.SIGTERM,
+	"SIGKILL": syscall.SIGKILL,
+}
+
 func (jm *JobMgr) TryStopJob(ch *miknas.ContextHelper, jobid string, killType string) error {
 	item, exist := jm.Jobs[jobid]
 	if !exist {
@@ -167,16 +176,20 @@ func (jm *JobMgr) TryStopJob(ch *miknas.ContextHelper, jobid string, killType st
 		item.FailTxt += fmt.Sprintf("[用户 %s 取消了该任务]", uid)
 		item.SetState(JobStCanceled)
 	} else if item.CheckInState(JobStRunning) {
-		item.FailTxt += fmt.Sprintf("[用户 %s 取消了该任务]", uid)
-		if killType == "terminate" {
-			item.Cmd.Process.Signal(syscall.SIGTERM)
-		} else if killType == "kill" {
-			item.Cmd.Process.Signal(syscall.SIGKILL)
-		} else if killType == "SIGINT" {
-			item.Cmd.Process.Signal(syscall.SIGINT)
-		} else {
-			item.Cancel()
+		killSignal, ok := killType2Signal[killType]
+		if !ok {
+			killSignal = syscall.SIGINT
 		}
+		pgid, err := syscall.Getpgid(item.Cmd.Process.Pid)
+		if err != nil {
+			return miknas.NewFailRet("获取进程pgid失败: %v", err)
+		}
+		err = syscall.Kill(-pgid, killSignal)
+		// err := item.Cmd.Process.Signal(killSignal)
+		if err != nil {
+			return miknas.NewFailRet("发送信号失败: %v", err)
+		}
+		item.FailTxt += fmt.Sprintf("[用户2 %s 取消了该任务]", uid)
 	}
 	return nil
 }
@@ -301,6 +314,11 @@ func GetJobMgr(ch *miknas.ContextHelper) *JobMgr {
 func NewJob(title string, name string, arg ...string) *JobItem {
 	ctx, cancel := context.WithCancel(context.Background())
 	c := exec.CommandContext(ctx, name, arg...)
+	// 参考: https://github.com/Reso1mi/blog-md/blob/master/Golang踩坑exec取消不退出.md
+	//开辟新的线程组（Linux 平台特有的属性）
+	c.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true, //使得 Shell 进程开辟新的 PGID, 即 Shell 进程的 PID, 它后面创建的所有子进程都属于该进程组
+	}
 	item := &JobItem{
 		Title:        title,
 		Cmd:          c,

@@ -14,9 +14,18 @@ type PluginActionCmdDef struct {
 	Args []string
 }
 
+type FormConfDef struct {
+	Id             string         `toml:"id" json:"id"`
+	Title          string         `toml:"title" json:"title"`
+	Component      string         `toml:"component" json:"component"`
+	Default        string         `toml:"default" json:"default"`
+	Desc           string         `toml:"desc" json:"desc"`
+	ComponentProps map[string]any `toml:"componentProps" json:"componentProps"`
+}
+
 type PluginJobFormDef struct {
-	ConfirmLabel string             `toml:"confirmLabel" json:"confirmLabel"`
-	FormConfs    [](map[string]any) `toml:"formConfs" json:"formConfs"`
+	ConfirmLabel string        `toml:"confirmLabel" json:"confirmLabel"`
+	FormConfs    []FormConfDef `toml:"formConfs" json:"formConfs"`
 }
 
 type PluginJobDef struct {
