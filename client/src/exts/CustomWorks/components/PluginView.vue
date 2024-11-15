@@ -8,7 +8,7 @@
         @click="execJob(jobConf.Id)"
       >
         <q-item-section avatar>
-          <q-icon name="construction" />
+          <q-icon :name="jobConf.Icon || 'construction'" />
         </q-item-section>
         <q-item-section>
           <q-item-label lines="1">

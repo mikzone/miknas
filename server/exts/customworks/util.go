@@ -31,6 +31,7 @@ type PluginJobFormDef struct {
 type PluginJobDef struct {
 	Id   string
 	Name string
+	Icon string
 	Form PluginJobFormDef
 	Cmd  PluginActionCmdDef
 }

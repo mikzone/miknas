@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-tabs v-model="state.tab" class="bg-grey-3 shadow-1" :breakpoint="0">
+    <q-tabs v-model="state.tab" align="left" class="bg-grey-3 shadow-1" :breakpoint="0">
       <q-tab
         v-for="pluginDetail in relPlugins"
         :key="pluginDetail.pluginId"

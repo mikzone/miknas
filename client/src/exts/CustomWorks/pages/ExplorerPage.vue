@@ -1,13 +1,15 @@
 <template>
   <q-page>
-    <div class="row">
+    <div class="row q-col-gutter-md q-pa-md">
       <div class="col-12">
-        <MdcDriveAliveView
-          :fsid="`Cw_${props.spaceId}`"
-          :fsrela="props.fspath"
-          :kind="props.kind"
-          :extra-conf="myExtraConf"
-        ></MdcDriveAliveView>
+        <div class="rounded-borders mn-bordered">
+          <MdcDriveAliveView
+            :fsid="`Cw_${props.spaceId}`"
+            :fsrela="props.fspath"
+            :kind="props.kind"
+            :extra-conf="myExtraConf"
+          ></MdcDriveAliveView>
+        </div>
       </div>
       <div v-if="props.kind == 'list'" class="col-12">
         <FolderPluginsView :space-id="props.spaceId" :fspath="props.fspath"></FolderPluginsView>

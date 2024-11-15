@@ -106,7 +106,7 @@
         </q-btn>
       </div>
     </div>
-    <q-list v-if="!fileGetter.grid.value" bordered separator>
+    <q-list v-if="!fileGetter.grid.value" separator>
       <q-item
         v-for="fileInfo in fileState.curFiles"
         :key="fileInfo.name"
