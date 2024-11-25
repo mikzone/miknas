@@ -114,6 +114,10 @@ func (ch *ContextHelper) GetUserAuth() IUserAuth {
 	app := ch.GetApp()
 	extid := app.ConfMgr.Get("MIKNAS_AUTH_EXTS").(string)
 	ext := app.GetExt(extid)
+	if ext == nil {
+		errMsg := fmt.Sprintf("未定义的扩展(%s)", extid)
+		panic(NewFailRet(errMsg))
+	}
 	return ext.GetUserAuth(ch)
 }
 
