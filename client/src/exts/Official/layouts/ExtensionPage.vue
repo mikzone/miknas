@@ -2,13 +2,7 @@
   <q-layout view="hHh Lpr fff" class="bg-white">
     <q-header v-if="showHeader" class="mn-page-header" height-hint="64">
       <q-toolbar class="q-pa-none">
-        <q-btn
-          dense
-          flat
-          round
-          icon="space_dashboard"
-          @click="toggleLeftDrawer"
-        />
+        <q-btn dense flat round icon="space_dashboard" @click="toggleLeftDrawer" />
 
         <slot name="toolbar">
           <q-toolbar-title class="mn-toolbar-title">
@@ -17,10 +11,7 @@
           <template v-if="officialStore.uid">
             <slot name="login-toolbar">
               <q-tabs shrink stretch>
-                <PageMenuItem
-                  title="首页"
-                  :to="curExtsInfo.index"
-                ></PageMenuItem>
+                <PageMenuItem title="首页" :to="curExtsInfo.index"></PageMenuItem>
               </q-tabs>
             </slot>
           </template>
@@ -31,17 +22,11 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      side="left"
-      elevated
-      behavior="mobile"
-      :width="260"
-    >
+    <q-drawer v-model="leftDrawerOpen" side="left" elevated behavior="mobile" :width="260">
       <q-scroll-area class="fit">
         <q-list>
           <q-item-label header class="bg-teal text-white"
-            >欢迎使用 MikNas</q-item-label
+            >欢迎使用 {{ officialStore.serverConfigs.MIKNAS_SITE_TITLE || 'MikNas' }}</q-item-label
           >
           <q-item v-if="!officialStore.uid" class="bg-teal text-white q-pb-lg">
             <q-item-section avatar>
@@ -49,13 +34,7 @@
             </q-item-section>
             <q-item-section> 未登录 </q-item-section>
             <q-item-section side>
-              <q-btn
-                flat
-                round
-                color="white"
-                icon="login"
-                :href="officialStore.loginUrl"
-              ></q-btn>
+              <q-btn flat round color="white" icon="login" :href="officialStore.loginUrl"></q-btn>
             </q-item-section>
           </q-item>
           <q-item v-else class="bg-teal text-white q-pb-lg">
@@ -125,8 +104,8 @@ let allExtsObjs = getAllExtensions();
 const props = defineProps({
   toolbarNeedLogined: {
     type: Boolean,
-    default: false,
-  },
+    default: false
+  }
 });
 
 const officialStore = useOfficialStore();
@@ -153,7 +132,7 @@ function CalcExtsInfos() {
       desc: extsObj.desc,
       title: extsObj.title,
       icon: extsObj.icon || 'extension',
-      index: index,
+      index: index
     };
     ret[extsObj.id] = info;
   }
@@ -162,7 +141,7 @@ function CalcExtsInfos() {
 
 const allExtsInfos = reactive(CalcExtsInfos());
 
-const curExtsInfo = computed(()=>{
+const curExtsInfo = computed(() => {
   let extsId = curExtsId.value;
   if (!extsId) return {};
   return allExtsInfos[extsId] || {};

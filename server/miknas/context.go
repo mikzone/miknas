@@ -148,6 +148,18 @@ func (ch *ContextHelper) ClientUrl(suburl string) string {
 	return path.Join(rootUrl, suburl)
 }
 
+func (ch *ContextHelper) FullUrl(suburl string) string {
+	c := ch.Ctx
+	scheme := "http"
+	if c.Request.TLS != nil {
+		scheme = "https"
+	} else if ptScheme := c.GetHeader("X-Forwarded-Proto"); ptScheme != "" {
+		scheme = ptScheme
+	}
+	host := c.Request.Host
+	return fmt.Sprintf("%s://%s%s", scheme, host, suburl)
+}
+
 func (ch *ContextHelper) Ensure(resid AuthResId) {
 	app := ch.GetApp()
 	if !app.AuthMgr.HasRes(resid) {

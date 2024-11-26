@@ -13,6 +13,10 @@ export const useOfficialStore = defineStore('official', {
       // serverConfigs
       serverConfigs: {},
       extids: {},
+      site: {
+        // 站点相关信息
+        title: 'MikNasClient',
+      },
     };
   },
 
@@ -55,6 +59,9 @@ export const useOfficialStore = defineStore('official', {
       }
       let result = iRet.ret;
       this.modifyStateDict(result);
+      if (result.serverConfigs && result.serverConfigs.MIKNAS_SITE_TITLE) {
+        document.title = result.serverConfigs.MIKNAS_SITE_TITLE;
+      }
     },
 
     mdClientUrl(subUrl) {
@@ -81,7 +88,7 @@ export const useOfficialStore = defineStore('official', {
       return `${prefix}/${subUrl}`;
     },
 
-    canAccess(extsId, resid){
+    canAccess(extsId, resid) {
       let res = `${extsId}/${resid}`;
       return gutil.authCheck(res, this.userAuths);
     },

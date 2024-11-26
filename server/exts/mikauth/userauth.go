@@ -38,6 +38,7 @@ func (m *MyUserAuth) Refresh() {
 	if uid == adminUid {
 		role = "admin"
 	}
+	m.role = role
 	preRole := miknas.AnyToStr(session.Get("role"))
 	if role != preRole {
 		session.Set("role", role)

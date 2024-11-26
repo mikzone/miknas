@@ -71,6 +71,9 @@
                             <q-item-section>{{ tmprole }}</q-item-section>
                           </q-item>
                         </template>
+                        <q-item :to="getExtension('MikAuth').routePath('roles')">
+                          <q-item-section class="text-link"> 前往添加新角色 </q-item-section>
+                        </q-item>
                       </q-list>
                     </q-menu>
                   </q-item>
@@ -97,21 +100,21 @@ const tableColumns = [
     label: 'uid',
     field: 'uid',
     sortable: true,
-    align: 'left',
+    align: 'left'
   },
   {
     name: 'name',
     label: 'name',
     field: 'name',
     sortable: true,
-    align: 'left',
+    align: 'left'
   },
   {
     name: 'role',
     label: 'role',
     field: 'role',
     sortable: true,
-    align: 'left',
+    align: 'left'
   },
   {
     name: 'cts',
@@ -119,12 +122,12 @@ const tableColumns = [
     field: 'viewCts',
     sortable: true,
     align: 'left',
-    style: 'width: 140px',
+    style: 'width: 140px'
   },
   {
     name: 'op',
-    align: 'left',
-  },
+    align: 'left'
+  }
 ];
 </script>
 <script setup>
@@ -137,7 +140,7 @@ const state = reactive({
   filterTxt: '',
   isLoading: true,
   roles: [],
-  tableColumns: tableColumns,
+  tableColumns: tableColumns
 });
 
 const extsObj = useExtension();
@@ -163,7 +166,7 @@ async function trySetRole(info, newRole) {
   state.isLoading = true;
   let iRet = await extsObj.mcpost('modifyUserRole', {
     uid: info.uid,
-    role: newRole,
+    role: newRole
   });
   if (!iRet.suc) {
     MikCall.alertRespErrMsg(iRet);
