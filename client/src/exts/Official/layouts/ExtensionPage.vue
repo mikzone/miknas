@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hHh Lpr fff" class="bg-white">
+  <q-layout view="lHh Lpr fff" class="bg-white">
     <q-header v-if="showHeader" class="mn-page-header" height-hint="64">
       <q-toolbar class="q-pa-none">
         <q-btn dense flat round icon="space_dashboard" @click="toggleLeftDrawer" />
@@ -22,13 +22,13 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" side="left" elevated behavior="mobile" :width="260">
+    <q-drawer v-model="leftDrawerOpen" side="left" elevated :width="260" :mini="miniState">
       <q-scroll-area class="fit">
         <q-list>
           <q-item-label header class="bg-teal text-white"
             >欢迎使用 {{ officialStore.serverConfigs.MIKNAS_SITE_TITLE || 'MikNas' }}</q-item-label
           >
-          <q-item v-if="!officialStore.uid" class="bg-teal text-white q-pb-lg">
+          <q-item v-if="!officialStore.uid" class="bg-teal text-white">
             <q-item-section avatar>
               <q-icon name="person_off" />
             </q-item-section>
@@ -37,7 +37,7 @@
               <q-btn flat round color="white" icon="login" :href="officialStore.loginUrl"></q-btn>
             </q-item-section>
           </q-item>
-          <q-item v-else class="bg-teal text-white q-pb-lg">
+          <q-item v-else class="bg-teal text-white">
             <q-item-section avatar>
               <q-avatar>
                 <!-- <img src="https://cdn.quasar.dev/img/avatar.png"/> -->
@@ -62,15 +62,35 @@
               </q-btn>
             </q-item-section>
           </q-item>
+          <div class="q-pb-md bg-teal mn-only-mini-drawer-hide"></div>
+
+          <q-item class="mn-only-mini-drawer-hide">
+            <q-item-section class="text-grey-8"> 所有扩展 </q-item-section>
+            <q-item-section side class="q-mini-drawer-hide">
+              <q-btn
+                flat
+                round
+                color="text-grey-8"
+                icon="first_page"
+                @click="miniState = true"
+              ></q-btn>
+            </q-item-section>
+          </q-item>
+
+          <q-item class="q-mini-drawer-only" clickable @click="miniState = false">
+            <q-item-section avatar>
+              <q-icon name="last_page" />
+            </q-item-section>
+          </q-item>
 
           <template v-if="officialStore.uid">
-            <q-item-label header>所有扩展</q-item-label>
             <q-item
               v-for="extsInfo in allExtsInfos"
               :key="extsInfo.id"
               v-ripple
               clickable
               :to="extsInfo.index"
+              active-class="text-orange-10"
             >
               <q-item-section avatar>
                 <q-icon :name="extsInfo.icon" />
@@ -78,6 +98,7 @@
               <q-item-section> {{ extsInfo.title }} </q-item-section>
             </q-item>
           </template>
+          <div v-else>暂无</div>
         </q-list>
       </q-scroll-area>
     </q-drawer>
@@ -147,7 +168,8 @@ const curExtsInfo = computed(() => {
   return allExtsInfos[extsId] || {};
 });
 
-const leftDrawerOpen = ref(false);
+const leftDrawerOpen = ref(true);
+const miniState = ref(true);
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
