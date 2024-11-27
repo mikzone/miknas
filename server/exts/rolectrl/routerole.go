@@ -1,11 +1,11 @@
-package mikauth
+package rolectrl
 
 import "github.com/mikzone/miknas/server/miknas"
 
 func allRoles(ch *miknas.ContextHelper) {
-	ch.Ensure(ch.GetRelExt().Res("manager"))
+	ch.Ensure(ch.GetRelExt().Res("vist"))
 	db := ch.GetApp().Db
-	var roles []MikauthRole
+	var roles []RolectrlRole
 	db.Find(&roles)
 	infos := []miknas.H{}
 	for _, role := range roles {
@@ -23,7 +23,7 @@ type inDataRole struct {
 }
 
 func oneRole(ch *miknas.ContextHelper) {
-	ch.Ensure(ch.GetRelExt().Res("manager"))
+	ch.Ensure(ch.GetRelExt().Res("vist"))
 	var modify inDataRole
 	ch.BindJSON(&modify)
 	db := ch.GetApp().Db
@@ -39,7 +39,7 @@ func oneRole(ch *miknas.ContextHelper) {
 }
 
 func addRole(ch *miknas.ContextHelper) {
-	ch.Ensure(ch.GetRelExt().Res("manager"))
+	ch.Ensure(ch.GetRelExt().Res("vist"))
 	var modify inDataRole
 	ch.BindJSON(&modify)
 	db := ch.GetApp().Db
@@ -55,7 +55,7 @@ func addRole(ch *miknas.ContextHelper) {
 }
 
 func removeRole(ch *miknas.ContextHelper) {
-	ch.Ensure(ch.GetRelExt().Res("manager"))
+	ch.Ensure(ch.GetRelExt().Res("vist"))
 	var modify inDataRole
 	ch.BindJSON(&modify)
 	db := ch.GetApp().Db
@@ -78,7 +78,7 @@ type inDataSaveRole struct {
 }
 
 func saveRole(ch *miknas.ContextHelper) {
-	ch.Ensure(ch.GetRelExt().Res("manager"))
+	ch.Ensure(ch.GetRelExt().Res("vist"))
 	var modify inDataSaveRole
 	ch.BindJSON(&modify)
 	db := ch.GetApp().Db

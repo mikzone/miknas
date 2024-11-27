@@ -2,14 +2,14 @@
 import { defineExtension } from 'miknas/utils';
 
 // 此处定义扩展id，要和文件目录名保持一致
-const EXTS_ID = 'MikAuth';
+const EXTS_ID = 'RoleCtrl';
 
 // WARNING: 注意: 此处只供exts_util.js扫描注册使用，你在代码中不应该使用它
 export const useExtension = defineExtension({
   id: EXTS_ID,
-  title: '用户管理',
-  desc: 'MikNas官方用户管理',
-  icon: 'admin_panel_settings',
+  title: '角色权限管理',
+  desc: 'MikNas默认角色权限管理',
+  icon: 'perm_identity',
 
   // 定义扩展路由, 格式应该是 undefined 或者是 VueRouter对应的RouteLocationRaw格式
   // 因为会被当作是被嵌套的路由，因此对于扩展顶层的route有一定限制
@@ -25,21 +25,12 @@ export const useExtension = defineExtension({
         {
           path: '',
           name: extsObj.routeName('Index'),
-          component: () => import('./pages/IndexPage.vue'),
+          component: () => import('./pages/RolesPage.vue'),
         },
         {
-          path: 'login',
-          meta: { needLogined: false },
-          component: () => import('./pages/LoginPage.vue'),
-        },
-        {
-          path: 'register',
-          meta: { needLogined: false },
-          component: () => import('./pages/RegisterPage.vue'),
-        },
-        {
-          path: 'manage',
-          component: () => import('./pages/ManagePage.vue'),
+          path: 'edit_role/:roleid',
+          component: () => import('./pages/EditRolePage.vue'),
+          props: true
         },
       ],
     }

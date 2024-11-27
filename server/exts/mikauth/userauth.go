@@ -1,13 +1,13 @@
 package mikauth
 
 import (
+	"github.com/mikzone/miknas/server/exts/rolectrl"
 	"github.com/mikzone/miknas/server/miknas"
 )
 
 type MyUserAuth struct {
 	role string
 	ch   *miknas.ContextHelper
-	rec  *MikauthRole
 }
 
 func (m *MyUserAuth) GetUid() string {
@@ -46,34 +46,15 @@ func (m *MyUserAuth) Refresh() {
 	}
 }
 
+func (m *MyUserAuth) GetExtra() map[string]any {
+	return map[string]any{
+		"role": m.role,
+		"ch":   m.ch,
+	}
+}
+
 func (m *MyUserAuth) CanAccess(resid miknas.AuthResId) bool {
-	// 没有定义或者找不到角色的都用默认值
-	app := m.ch.GetApp()
-	item := app.AuthMgr.GetItem(resid)
-	if item == nil {
-		return false
-	}
-	if m.role == "admin" {
-		return true
-	}
-	db := app.Db
-	roleRec := m.rec
-	if roleRec == nil {
-		// 记录一次缓存
-		roleRec = GetRoleById(db, m.role)
-		if roleRec == nil {
-			roleRec = &MikauthRole{}
-		}
-		m.rec = roleRec
-	}
-	if roleRec != nil {
-		flag, exist := roleRec.Cans[resid]
-		if exist {
-			return flag
-		}
-	}
-	// 没有定义或者找不到角色的都用默认值
-	return item.Default || false
+	return rolectrl.CanAccess(m, resid)
 }
 
 func (ext *MikNasExt) GetUserAuth(ch *miknas.ContextHelper) miknas.IUserAuth {

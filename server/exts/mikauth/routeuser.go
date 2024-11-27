@@ -3,6 +3,7 @@ package mikauth
 import (
 	"fmt"
 
+	"github.com/mikzone/miknas/server/exts/rolectrl"
 	"github.com/mikzone/miknas/server/miknas"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -199,12 +200,8 @@ func queryAllUser(ch *miknas.ContextHelper) {
 	for _, user := range users {
 		infos = append(infos, PackUserInfo(&user))
 	}
-	var roleRecs []MikauthRole
-	db.Select("Id").Find(&roleRecs)
-	roles := []string{}
-	for _, roleRec := range roleRecs {
-		roles = append(roles, roleRec.Id)
-	}
+
+	roles := rolectrl.GetAllRoleIds(db)
 
 	ch.SucResp(miknas.H{
 		"roles": roles,
@@ -227,7 +224,7 @@ func modifyUserRole(ch *miknas.ContextHelper) {
 		ch.FailResp("用户不存在")
 		return
 	}
-	roleRec := GetRoleById(db, modify.Role)
+	roleRec := rolectrl.GetRoleById(db, modify.Role)
 	if roleRec == nil {
 		ch.FailResp("角色(%s)不存在", modify.Role)
 		return

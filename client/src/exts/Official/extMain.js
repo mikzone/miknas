@@ -4,7 +4,7 @@ const EXTS_ID = 'Official';
 
 export const useExtension = defineExtension({
   id: EXTS_ID,
-  title: 'MikNas',
+  title: 'Official',
   desc: '提供MikNas相关基础功能',
   icon: 'apartment',
   route: (extsObj) => {

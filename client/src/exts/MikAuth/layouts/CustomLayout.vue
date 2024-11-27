@@ -3,8 +3,11 @@
     <template #login-toolbar>
       <q-tabs shrink stretch>
         <PageMenuItem title="首页" :to="extsObj.routePath('')"></PageMenuItem>
-        <PageMenuItem v-if="extsObj.hasAuth('manager')" title="用户管理" :to="extsObj.routePath('manage')"></PageMenuItem>
-        <PageMenuItem v-if="extsObj.hasAuth('manager')" title="权限管理" :to="extsObj.routePath('roles')"></PageMenuItem>
+        <PageMenuItem
+          v-if="extsObj.hasAuth('manager')"
+          title="用户管理"
+          :to="extsObj.routePath('manage')"
+        ></PageMenuItem>
       </q-tabs>
     </template>
     <template #unlogin-toolbar>

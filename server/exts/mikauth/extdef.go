@@ -18,11 +18,9 @@ func (ext *MikNasExt) OnBind() {
 	ext.RegAuth(ext.Res("vist"), "管理自己账号", false)
 	// routes
 	regUserRoutes(ext)
-	regRoleRoutes(ext)
 }
 
 func (ext *MikNasExt) OnInit() {
 	db := ext.App.Db
 	db.AutoMigrate(&MikauthUser{})
-	db.AutoMigrate(&MikauthRole{})
 }

@@ -71,7 +71,7 @@
                             <q-item-section>{{ tmprole }}</q-item-section>
                           </q-item>
                         </template>
-                        <q-item :to="getExtension('MikAuth').routePath('roles')">
+                        <q-item :to="getExtension('RoleCtrl').routePath('')">
                           <q-item-section class="text-link"> 前往添加新角色 </q-item-section>
                         </q-item>
                       </q-list>
@@ -134,6 +134,7 @@ const tableColumns = [
 import { onMounted, reactive } from 'vue';
 import { useExtension } from '../extMain.js';
 import { gutil, MikCall } from 'miknas/utils';
+import { getExtension } from 'miknas/utils';
 
 const state = reactive({
   tableRows: [],

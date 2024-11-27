@@ -17,6 +17,7 @@ type IUserAuth interface {
 	MustGetUid() string
 	CanAccess(AuthResId) bool
 	Refresh()
+	GetExtra() map[string]any // 额外信息，比如角色等
 }
 
 /*
