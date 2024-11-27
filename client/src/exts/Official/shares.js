@@ -15,8 +15,9 @@ export { default as useFormView } from './compositions/useFormView';
 
 export { default as PageMenuItem } from './components/PageMenuItem.vue';
 export { default as PageSubMenu } from './components/PageSubMenu.vue';
+export { default as LayoutHeader } from './components/LayoutHeader.vue';
 export { default as SimpleNestRouterView } from './layouts/SimpleNestRouterView.vue';
-export { default as ExtensionPage } from './layouts/ExtensionPage.vue';
+export { default as SiteLayout } from './layouts/SiteLayout.vue';
 export { default as ResizeDrawer } from './layouts/ResizeDrawer.vue';
 
 export const ByteMdInput = defineAsyncComponent(() =>

@@ -1,28 +1,14 @@
 <template>
   <q-layout view="lHh Lpr fff" class="bg-white">
-    <q-header v-if="showHeader" class="mn-page-header" height-hint="64">
-      <q-toolbar class="q-pa-none">
-        <q-btn dense flat round icon="space_dashboard" @click="toggleLeftDrawer" />
-
-        <slot name="toolbar">
-          <q-toolbar-title class="mn-toolbar-title">
-            {{ curExtsInfo.title }}
-          </q-toolbar-title>
-          <template v-if="officialStore.uid">
-            <slot name="login-toolbar">
-              <q-tabs shrink stretch>
-                <PageMenuItem title="首页" :to="curExtsInfo.index"></PageMenuItem>
-              </q-tabs>
-            </slot>
-          </template>
-          <template v-else>
-            <slot name="unlogin-toolbar"></slot>
-          </template>
-        </slot>
-      </q-toolbar>
-    </q-header>
-
-    <q-drawer v-model="leftDrawerOpen" side="left" elevated :width="260" :mini="miniState">
+    <q-drawer
+      v-model="officialStore.leftDrawerOpen"
+      side="left"
+      elevated
+      :width="260"
+      :mini="miniState"
+      :model-value="officialStore.leftDrawerOpen"
+      @update:model-value="officialStore.updateLeftDrawerOpen"
+    >
       <q-scroll-area class="fit">
         <q-list>
           <q-item-label header class="bg-teal text-white"
@@ -83,63 +69,43 @@
             </q-item-section>
           </q-item>
 
-          <template v-if="officialStore.uid">
-            <q-item
-              v-for="extsInfo in allExtsInfos"
-              :key="extsInfo.id"
-              v-ripple
-              clickable
-              :to="extsInfo.index"
-              active-class="text-orange-10"
-            >
-              <q-item-section avatar>
-                <q-icon :name="extsInfo.icon" />
-              </q-item-section>
-              <q-item-section> {{ extsInfo.title }} </q-item-section>
-            </q-item>
-          </template>
-          <div v-else>暂无</div>
+          <q-item
+            v-for="extsInfo in allExtsInfos"
+            :key="extsInfo.id"
+            v-ripple
+            clickable
+            :to="extsInfo.index"
+            active-class="text-yellow bg-purple"
+          >
+            <q-item-section avatar>
+              <q-icon :name="extsInfo.icon" />
+            </q-item-section>
+            <q-item-section> {{ extsInfo.title }} </q-item-section>
+          </q-item>
         </q-list>
       </q-scroll-area>
     </q-drawer>
-    <q-page-container>
-      <slot>
+    <template v-if="route.meta.fullCtrlLayout">
+      <router-view />
+    </template>
+    <template v-else>
+      <component :is="curHeaderComponent" v-if="curHeaderComponent" />
+      <q-page-container>
         <router-view />
-      </slot>
-    </q-page-container>
-
-    <slot name="layout"></slot>
+      </q-page-container>
+    </template>
   </q-layout>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
-
-import { getAllExtensions } from 'miknas/utils';
-import { computed } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
+
+import { getAllExtensions, getExtension } from 'miknas/utils';
 import { useOfficialStore } from '../stores/official.js';
-import PageMenuItem from '../components/PageMenuItem.vue';
 let allExtsObjs = getAllExtensions();
 
-const props = defineProps({
-  toolbarNeedLogined: {
-    type: Boolean,
-    default: false
-  }
-});
-
 const officialStore = useOfficialStore();
-
-const showHeader = computed(() => {
-  if (!props.toolbarNeedLogined) return true;
-  return !!officialStore.uid;
-});
-
-const route = useRoute();
-const curExtsId = computed(() => {
-  return route.meta.extsId;
-});
 
 function CalcExtsInfos() {
   let ret = {};
@@ -162,16 +128,31 @@ function CalcExtsInfos() {
 
 const allExtsInfos = reactive(CalcExtsInfos());
 
-const curExtsInfo = computed(() => {
-  let extsId = curExtsId.value;
-  if (!extsId) return {};
-  return allExtsInfos[extsId] || {};
+const route = useRoute();
+const curExtsId = computed(() => {
+  return route.meta.extsId;
 });
 
-const leftDrawerOpen = ref(true);
-const miniState = ref(true);
+const curExtsObj = computed(() => {
+  let extsId = curExtsId.value;
+  if (!extsId) return null;
+  return getExtension(extsId);
+});
 
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value;
-}
+const curHeaderComponent = computed(() => {
+  let com = route.meta.headerComponent;
+  if (com) {
+    return com;
+  }
+  com = curExtsObj.value && curExtsObj.value.headerComponent;
+  return com;
+});
+
+// const curExtsHeaderComponent = computed(() => {
+//   let com = curExtsObj.value && curExtsObj.value.headerComponent;
+//   if (!com) return null;
+//   return com;
+// });
+
+const miniState = ref(false);
 </script>

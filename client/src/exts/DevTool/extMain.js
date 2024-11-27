@@ -10,6 +10,7 @@ export const useExtension = defineExtension({
   title: '开发管理工具',
   desc: '用于开发时期各种调试测试',
   icon: 'construction',
+  headerComponent: () => import('./layouts/LayoutHeader.vue'),
   // 定义扩展是否有首页，boolean值，缺省则为true
   index: true,
 
@@ -21,7 +22,6 @@ export const useExtension = defineExtension({
   // 多页面要用嵌套路由，示例如下
   route: (extsObj) => {
     return {
-      component: () => import('./layouts/CustomLayout.vue'),
       children: [
         {
           path: '',
@@ -35,7 +35,7 @@ export const useExtension = defineExtension({
         {
           path: 'view/:routeSubPath(.*)?',
           name: extsObj.routeName('view'),
-          component: () => import('../Drive/shares').then((module)=>module['CommonExplorerPage']),
+          component: () => import('../Drive/shares').then((module) => module['CommonExplorerPage']),
           // component: () => import('./pages/IndexPage.vue'),
           props: route => ({ fsid: 'Ws', fsrela: route.params.routeSubPath, kind: 'view' }),
         },
@@ -45,7 +45,7 @@ export const useExtension = defineExtension({
           meta: {
             fsViewRouteName: extsObj.routeName('view'),
           },
-          component: () => import('../Drive/shares').then((module)=>module['CommonExplorerPage']),
+          component: () => import('../Drive/shares').then((module) => module['CommonExplorerPage']),
           props: route => ({ fsid: 'Ws', fsrela: route.params.routeSubPath, kind: 'list' }),
         },
       ],

@@ -17,6 +17,7 @@ export const useOfficialStore = defineStore('official', {
         // 站点相关信息
         title: 'MikNasClient',
       },
+      leftDrawerOpen: false,
     };
   },
 
@@ -40,6 +41,9 @@ export const useOfficialStore = defineStore('official', {
   },
 
   actions: {
+    updateLeftDrawerOpen(val) {
+      this.leftDrawerOpen = val;
+    },
     modifyStateDict(modifyDict) {
       for (const [k, v] of Object.entries(modifyDict)) {
         if (k in this) {

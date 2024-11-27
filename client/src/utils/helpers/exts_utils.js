@@ -2,6 +2,7 @@
 
 import { useOfficialStore } from 'miknas/exts/Official/stores/official.js';
 import { MikCall, gutil } from './official_utils';
+import { defineAsyncComponent } from 'vue';
 
 class Extension {
 
@@ -12,6 +13,13 @@ class Extension {
     this.title = extsConf.title;
     this.icon = extsConf.icon;
     this.route = extsConf.route;
+    if (extsConf.headerComponent === false) {
+      this.headerComponent = undefined;
+    }
+    else {
+      let com = extsConf.headerComponent || (() => import('miknas/exts/Official/shares').then((module) => module['LayoutHeader']));
+      this.headerComponent = defineAsyncComponent(com);
+    }
     if (extsConf.index === undefined) extsConf.index = true;
     this.index = extsConf.index;
     this.hasIndex = false;
@@ -132,7 +140,6 @@ export function registerExtensions(ctx) {
       if (typeof extsRoute == 'function') extsRoute = extsRoute(extsObj);
       extsRoute.path = extsObj.routePath('');
       extsRoute.name = extsObj.routeName('');
-      extsRoute.component = extsRoute.component || (() => import('miknas/exts/Official/shares').then((module) => module['ExtensionPage']));
       extsRoute.meta = extsRoute.meta || {};
       extsRoute.meta.extsId = extsId;
       router.addRoute('miknas_exts', extsRoute);

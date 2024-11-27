@@ -1,5 +1,5 @@
 <template>
-  <ExtensionPage>
+  <LayoutHeader>
     <template #toolbar>
       <q-toolbar-title class="mn-toolbar-title">预览: {{ viewState.curFilePath }}</q-toolbar-title>
       <q-btn class="q-px-sm" stretch flat :icon="viewGetter.curModeIcon.value">
@@ -20,14 +20,10 @@
           </q-list>
         </q-menu>
       </q-btn>
-      <q-btn
-        class="q-px-sm"
-        stretch
-        flat
-        icon="file_download"
-        @click="viewOp.downloadCurrent"
-      />
+      <q-btn class="q-px-sm" stretch flat icon="file_download" @click="viewOp.downloadCurrent" />
     </template>
+  </LayoutHeader>
+  <q-page-container>
     <q-page>
       <div class="column absolute-full bg-black">
         <div class="col q-pa-md scroll full-width">
@@ -56,31 +52,31 @@
         </div>
       </div>
     </q-page>
-  </ExtensionPage>
+  </q-page-container>
 </template>
 
 <script setup>
-import { ExtensionPage } from 'miknas/exts/Official/shares';
+import { LayoutHeader } from 'miknas/exts/Official/shares';
 import {
   usePreviewView,
   MdcFileViewText,
   MdcFileViewVideo,
-  MdcFileViewImg,
+  MdcFileViewImg
 } from 'miknas/exts/Drive/shares';
 
 const props = defineProps({
   fsid: {
     type: String,
-    required: true,
+    required: true
   },
   fspath: {
     type: String,
-    required: true,
-  },
+    required: true
+  }
 });
 
 const { viewState, viewGetter, viewOp } = usePreviewView({
   fsid: props.fsid,
-  initFilePath: props.fspath,
+  initFilePath: props.fspath
 });
 </script>

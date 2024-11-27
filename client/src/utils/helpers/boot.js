@@ -20,7 +20,7 @@ export const boot = async (ctx) => {
   // 注册路由
   router.addRoute({
     path: officialStore.mdClientUrl('/'),
-    component: () => import('miknas/exts/Official/shares').then((module) => module['SimpleNestRouterView']),
+    component: () => import('miknas/exts/Official/shares').then((module) => module['SiteLayout']),
     meta: { needLogined: true },
     name: 'miknas_exts',
     children: [],

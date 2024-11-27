@@ -22,8 +22,6 @@ export const useExtension = defineExtension({
   route: (extsObj) => {
     // const extsObj = useExtension();
     return {
-      // 这里用默认的ExtensionPage就好了，有定制的需求，可以自定义Customlayout
-      // component: () => import('./layouts/CustomLayout.vue'),
       children: [
         {
           path: '',

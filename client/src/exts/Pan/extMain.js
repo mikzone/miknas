@@ -10,6 +10,7 @@ export const useExtension = defineExtension({
   title: '个人网盘',
   desc: '提供存储的个人网盘',
   icon: 'cloud',
+  headerComponent: () => import('./layouts/LayoutHeader.vue'),
   // 定义扩展是否有首页，boolean值，缺省则为true
   index: true,
 
@@ -22,23 +23,22 @@ export const useExtension = defineExtension({
   route: (extsObj) => {
     // const extsObj = useExtension();
     return {
-      component: () => import('./layouts/CustomLayout.vue'),
       children: [
         {
           path: '',
           name: extsObj.routeName('Index'),
           // redirect: extsObj.routePath('pan'),
-          redirect: {name : extsObj.routeName('pan') },
+          redirect: { name: extsObj.routeName('pan') },
         },
         {
           path: 'shares',
           name: extsObj.routeName('shares'),
-          component: () => import('../Drive/shares').then((module)=>module['MySharesPage']),
+          component: () => import('../Drive/shares').then((module) => module['MySharesPage']),
         },
         {
           path: 'view/:routeSubPath(.*)?',
           name: extsObj.routeName('view'),
-          component: () => import('../Drive/shares').then((module)=>module['CommonExplorerPage']),
+          component: () => import('../Drive/shares').then((module) => module['CommonExplorerPage']),
           // component: () => import('./pages/IndexPage.vue'),
           props: route => ({ fsid: 'Priv', fsrela: route.params.routeSubPath, kind: 'view' }),
         },
@@ -48,7 +48,7 @@ export const useExtension = defineExtension({
           meta: {
             fsViewRouteName: extsObj.routeName('view'),
           },
-          component: () => import('../Drive/shares').then((module)=>module['CommonExplorerPage']),
+          component: () => import('../Drive/shares').then((module) => module['CommonExplorerPage']),
           props: route => ({ fsid: 'Priv', fsrela: route.params.routeSubPath, kind: 'list' }),
         },
       ],

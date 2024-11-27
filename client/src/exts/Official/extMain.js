@@ -10,8 +10,6 @@ export const useExtension = defineExtension({
   route: (extsObj) => {
     // const extsObj = useExtension();
     return {
-      // component: () => import('./layouts/CustomLayout.vue'),
-      // component: () => import('./shares').then((module)=>module['ExtensionPage']),
       children: [
         {
           path: '',

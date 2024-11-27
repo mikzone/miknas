@@ -10,6 +10,7 @@ export const useExtension = defineExtension({
   title: '用户管理',
   desc: 'MikNas官方用户管理',
   icon: 'admin_panel_settings',
+  headerComponent: () => import('./layouts/LayoutHeader.vue'),
 
   // 定义扩展路由, 格式应该是 undefined 或者是 VueRouter对应的RouteLocationRaw格式
   // 因为会被当作是被嵌套的路由，因此对于扩展顶层的route有一定限制
@@ -20,7 +21,6 @@ export const useExtension = defineExtension({
   route: (extsObj) => {
     // const extsObj = useExtension();
     return {
-      component: () => import('./layouts/CustomLayout.vue'),
       children: [
         {
           path: '',
