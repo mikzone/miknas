@@ -25,7 +25,7 @@ func New() *MikNasExt {
 
 func (ext *MikNasExt) OnBind() {
 	// you can register config, auth, routes in here
-	ext.RegAuth(ext.Res("vist"), "使用CustomWorks", false)
+	ext.RegAuth(ext.Res("vist"), "使用CustomWorks", true)
 	ext.RegConfs(
 		miknas.NewConfItem("CUSTOM_WORKS_PLUGINS", []string{}, "CustomWorks插件定义文件列表", false),
 		miknas.NewConfItem("CUSTOM_WORKS_SPACES", []SpaceDef{}, "CustomWorks工作区列表", false),

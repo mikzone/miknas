@@ -14,7 +14,7 @@ func New() *MikNasExt {
 
 func (ext *MikNasExt) OnBind() {
 	// you can register config, auth, routes in here
-	ext.RegAuth(ext.Res("vist"), "使用书签", false)
+	ext.RegAuth(ext.Res("vist"), "使用书签", true)
 	regRoutes(ext)
 }
 

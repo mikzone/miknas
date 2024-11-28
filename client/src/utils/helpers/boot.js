@@ -21,7 +21,7 @@ export const boot = async (ctx) => {
   router.addRoute({
     path: officialStore.mdClientUrl('/'),
     component: () => import('miknas/exts/Official/shares').then((module) => module['SiteLayout']),
-    meta: { needLogined: true },
+    // meta: { needLogined: true },
     name: 'miknas_exts',
     children: [],
   });
@@ -44,6 +44,12 @@ export const boot = async (ctx) => {
         return false;
       }
     }
-  })
-
+    let needAuthResId = to.meta.needAuthResId;
+    if (needAuthResId) {
+      if (!officialStore.canAccess(needAuthResId)) {
+        MikCall.sendErrorTips(`您没有权限(${needAuthResId})`);
+        return false;
+      }
+    }
+  });
 }

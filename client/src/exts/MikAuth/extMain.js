@@ -25,20 +25,20 @@ export const useExtension = defineExtension({
         {
           path: '',
           name: extsObj.routeName('Index'),
+          meta: { needAuthResId: extsObj.res('vist') },
           component: () => import('./pages/IndexPage.vue'),
         },
         {
           path: 'login',
-          meta: { needLogined: false },
           component: () => import('./pages/LoginPage.vue'),
         },
         {
           path: 'register',
-          meta: { needLogined: false },
           component: () => import('./pages/RegisterPage.vue'),
         },
         {
           path: 'manage',
+          meta: { needAuthResId: extsObj.res('manager') },
           component: () => import('./pages/ManagePage.vue'),
         },
       ],

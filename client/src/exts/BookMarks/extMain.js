@@ -21,6 +21,7 @@ export const useExtension = defineExtension({
   // 多页面要用嵌套路由，示例如下
   route: (extsObj) => {
     return {
+      meta: { needLogined: true },
       children: [
         {
           path: '',

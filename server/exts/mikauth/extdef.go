@@ -15,7 +15,7 @@ func New() *MikNasExt {
 func (ext *MikNasExt) OnBind() {
 	// register auth
 	ext.RegAuth(ext.Res("manager"), "管理用户和权限", true)
-	ext.RegAuth(ext.Res("vist"), "管理自己账号", false)
+	ext.RegAuth(ext.Res("vist"), "管理自己账号", true)
 	// routes
 	regUserRoutes(ext)
 }

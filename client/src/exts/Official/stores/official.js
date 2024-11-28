@@ -92,9 +92,8 @@ export const useOfficialStore = defineStore('official', {
       return `${prefix}/${subUrl}`;
     },
 
-    canAccess(extsId, resid) {
-      let res = `${extsId}/${resid}`;
-      return gutil.authCheck(res, this.userAuths);
+    canAccess(resid) {
+      return gutil.authCheck(resid, this.userAuths);
     },
   },
 });

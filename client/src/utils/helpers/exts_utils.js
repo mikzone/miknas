@@ -27,8 +27,13 @@ class Extension {
     this.alias = undefined;
   }
 
-  hasAuth(resid) {
-    return useOfficialStore().canAccess(this.id, resid);
+  res(extResId) {
+    return `${this.id}/${extResId}`;
+  }
+
+  hasAuth(extResId) {
+    let resid = this.res(extResId);
+    return useOfficialStore().canAccess(resid);
   }
 
   serverUrl(extsSubUrl, param, isfull) {

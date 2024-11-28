@@ -16,7 +16,6 @@ export const useExtension = defineExtension({
           name: extsObj.routeName('view'),
           component: () => import('./pages/ViewPage.vue'),
           meta: {
-            needLogined: false,
             fullCtrlLayout: true,
           },
           props: true,
@@ -25,7 +24,6 @@ export const useExtension = defineExtension({
           path: 's/:shareid',
           name: extsObj.routeName('viewShare'),
           meta: {
-            needLogined: false,
             fullCtrlLayout: true,
           },
           component: () => import('./pages/ViewShare.vue'),
@@ -35,7 +33,6 @@ export const useExtension = defineExtension({
           path: 's/:shareid/view/:routeSubPath(.*)?',
           name: extsObj.routeName('sview'),
           meta: {
-            needLogined: false,
             fullCtrlLayout: true,
           },
           component: () => import('./pages/ViewShare.vue'),
@@ -45,7 +42,6 @@ export const useExtension = defineExtension({
           path: 's/:shareid/list/:routeSubPath(.*)?',
           name: extsObj.routeName('slist'),
           meta: {
-            needLogined: false,
             fsViewRouteName: extsObj.routeName('sview'),
             fullCtrlLayout: true,
           },

@@ -51,7 +51,7 @@ func (ext *MikNasExt) OnBind() {
 	ext.RegStrConf("MIKNAS_ADMIN_UID", "admin", "管理员用户uid", false)
 	ext.RegStrConf("MIKNAS_SITE_TITLE", "MikNasClient", "站点标题", true)
 
-	ext.RegAuth(ext.Res("vist"), "使用miknas主页，一般所有人都需要", false)
+	ext.RegAuth(ext.Res("vist"), "使用miknas主页，一般所有人都需要", true)
 
 	// routes
 	regRoutes(ext)

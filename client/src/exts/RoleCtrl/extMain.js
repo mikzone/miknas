@@ -20,6 +20,7 @@ export const useExtension = defineExtension({
   route: (extsObj) => {
     // const extsObj = useExtension();
     return {
+      meta: { needAuthResId: extsObj.res('vist') },
       children: [
         {
           path: '',

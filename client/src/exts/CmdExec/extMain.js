@@ -12,6 +12,7 @@ export const useExtension = defineExtension({
   // 多页面要用嵌套路由，示例如下
   route: (extsObj) => {
     return {
+      meta: { needAuthResId: extsObj.res('vist') },
       children: [
         {
           path: '',

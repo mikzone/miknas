@@ -25,7 +25,7 @@ func (ext *MikNasExt) OnBind() {
 	if ext.GetId() != ExtId {
 		panic("不能修改 CmdExec 扩展的id")
 	}
-	ext.RegAuth(ext.Res("vist"), "浏览命令执行结果", false)
+	ext.RegAuth(ext.Res("vist"), "浏览命令执行结果", true)
 	regRoutes(ext)
 }
 

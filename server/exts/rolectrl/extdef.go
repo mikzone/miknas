@@ -13,7 +13,7 @@ func New() *MikNasExt {
 }
 
 func (ext *MikNasExt) OnBind() {
-	ext.RegAuth(ext.Res("vist"), "角色添加、权限管理", false)
+	ext.RegAuth(ext.Res("vist"), "角色添加、权限管理", true)
 	// routes
 	regRoleRoutes(ext)
 }

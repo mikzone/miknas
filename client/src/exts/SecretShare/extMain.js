@@ -20,6 +20,7 @@ export const useExtension = defineExtension({
   route: (extsObj) => {
     // const extsObj = useExtension();
     return {
+      meta: { needAuthResId: extsObj.res('vist'), needLogined: true },
       children: [
         {
           path: '',
@@ -29,6 +30,7 @@ export const useExtension = defineExtension({
         {
           path: 'view/:mid',
           meta: {
+            needAuthResId: false,
             needLogined: false,
           },
           component: () => import('./pages/ViewPage.vue'),

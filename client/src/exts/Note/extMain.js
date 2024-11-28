@@ -23,6 +23,7 @@ export const useExtension = defineExtension({
     // const extsObj = useExtension();
     return {
       component: () => import('./layouts/CustomLayout.vue'),
+      meta: { needAuthResId: extsObj.res('vist'), needLogined: true },
       children: [
         {
           path: '',
