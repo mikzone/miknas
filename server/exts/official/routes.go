@@ -10,20 +10,10 @@ func getClientInitInfo(ch *miknas.ContextHelper) {
 	userAuth := ch.GetUserAuth()
 	uid := userAuth.GetUid()
 	userAuth.Refresh()
-	needids := []string{}
-	extids := app.GetExtids()
-	for _, tmpid := range extids {
-		ext := app.GetExt(tmpid)
-		resid := ext.Res("vist")
-		if userAuth.CanAccess(resid) {
-			needids = append(needids, tmpid)
-		}
-	}
 	ch.SucResp(gin.H{
 		"uid":           uid,
 		"serverConfigs": app.ConfMgr.PackClientDict(),
 		"userAuths":     app.AuthMgr.PackClientDict(userAuth),
-		"extids":        needids,
 	})
 }
 

@@ -10,8 +10,6 @@ export const useExtension = defineExtension({
   title: 'ExtensionExample的标题',
   desc: 'ExtensionExample的介绍',
   icon: 'extension',
-  // 定义扩展是否有首页，boolean值，缺省则为true
-  index: true,
 
   // 定义扩展路由, 格式应该是 undefined 或者是 VueRouter对应的RouteLocationRaw格式
   // 因为会被当作是被嵌套的路由，因此对于扩展顶层的route有一定限制

@@ -10,7 +10,7 @@
         <template v-if="officialStore.uid">
           <slot name="login-toolbar">
             <q-tabs shrink stretch>
-              <PageMenuItem title="首页" :to="curExtsInfo.index"></PageMenuItem>
+              <PageMenuItem title="首页" :to="curExtsInfo.indexTo"></PageMenuItem>
             </q-tabs>
           </slot>
         </template>
@@ -29,12 +29,11 @@
 <script setup>
 import { reactive } from 'vue';
 
-import { getAllExtensions } from 'miknas/utils';
+import { calcValidExtsInfos } from 'miknas/utils';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useOfficialStore } from '../stores/official.js';
 import PageMenuItem from '../components/PageMenuItem.vue';
-let allExtsObjs = getAllExtensions();
 
 const props = defineProps({
   toolbarNeedLogined: {
@@ -55,26 +54,7 @@ const curExtsId = computed(() => {
   return route.meta.extsId;
 });
 
-function CalcExtsInfos() {
-  let ret = {};
-  for (let extsId of officialStore.extids) {
-    let extsObj = allExtsObjs[extsId];
-    if (!extsObj) continue;
-    let index = extsObj.getIndex();
-    if (!index) continue;
-    let info = {
-      id: extsObj.id,
-      desc: extsObj.desc,
-      title: extsObj.title,
-      icon: extsObj.icon || 'extension',
-      index: index
-    };
-    ret[extsObj.id] = info;
-  }
-  return ret;
-}
-
-const allExtsInfos = reactive(CalcExtsInfos());
+const allExtsInfos = reactive(calcValidExtsInfos());
 
 const curExtsInfo = computed(() => {
   let extsId = curExtsId.value;

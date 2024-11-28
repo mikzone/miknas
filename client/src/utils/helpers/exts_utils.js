@@ -20,9 +20,6 @@ class Extension {
       let com = extsConf.headerComponent || (() => import('miknas/exts/Official/shares').then((module) => module['LayoutHeader']));
       this.headerComponent = defineAsyncComponent(com);
     }
-    if (extsConf.index === undefined) extsConf.index = true;
-    this.index = extsConf.index;
-    this.hasIndex = false;
     this.routeNamePrefix = `miknas_exts_${this.id}`;
     this.alias = undefined;
   }
@@ -65,8 +62,19 @@ class Extension {
   }
 
   getIndex() {
-    if (!this.index) return undefined;
-    return this.routePath();
+    let convRoute = this.convRoute;
+    if (!convRoute) return undefined;
+    let IndexName = this.routeName('Index');
+    let oneRoute = dfsFindOneRoute(convRoute, IndexName);
+    if (!oneRoute) return undefined;
+    let meta = oneRoute.meta;
+    if (!meta) return undefined;
+    // 判断它是否能访问
+    let [suc] = useOfficialStore().canAccessByMeta(meta);
+    if (!suc) {
+      return undefined;
+    }
+    return { name: IndexName };
   }
 }
 
@@ -80,17 +88,48 @@ export function getAllExtensions() {
   return G_EXTS_INSTS;
 }
 
-function getExtensionRoute(extsObj) {
-  if (extsObj && extsObj.route) {
-    let extsRoute = extsObj.route;
-    if (typeof extsRoute == 'function') extsRoute = extsRoute(extsObj);
-    return extsRoute;
+function dfsFindOneRoute(oneRoute, name) {
+  if (oneRoute.name == name) return oneRoute;
+  if (oneRoute.children) {
+    for (let tmpRoute of oneRoute.children) {
+      let result = dfsFindOneRoute(tmpRoute, name);
+      if (result) return result;
+    }
   }
 }
 
+function dfsHandleRoute(oneRoute, parentMeta) {
+  // 递归的处理route
+  // 主要是处理meta，聚合一下信息
+  let curMeta = oneRoute.meta;
+  if (!curMeta) {
+    curMeta = {};
+    oneRoute.meta = curMeta;
+  }
+  for (let [k, v] of Object.entries(parentMeta)) {
+    if (curMeta[k] === undefined) {
+      // 和vue router同样的update方式
+      curMeta[k] = v;
+    }
+  }
+  if (oneRoute.children) {
+    for (let tmpRoute of oneRoute.children) {
+      dfsHandleRoute(tmpRoute, curMeta);
+    }
+  }
+  return true
+}
+
+function calcOrigRoute(extsObj) {
+  let extsRoute = extsObj.route;
+  if (typeof extsRoute == 'function') extsRoute = extsRoute(extsObj);
+  return extsRoute;
+}
+
 function verifyRouteValid(extsId, oneRoute) {
+  // 这里校验的是原始的route，不是convRoute，因为在校验时，还没搜到服务端下发的客户端前缀
   let path = oneRoute.path;
-  if (path) {
+  if (path) { // 根节点是自动填充上去的，不用检查，规则不一样
     if (path.startsWith('/')) throw `扩展(${extsId})里含有非法路由路径(${path}), 不能以'/'开头)`;
     let firstLetter = path.charAt(0);
     if (firstLetter >= 'A' && firstLetter <= 'Z') throw `扩展(${extsId})里含有非法路由路径(${path}), 为了方便指定默认扩展,不能以大写字母开头)`;
@@ -108,7 +147,7 @@ function verifyExtension(extsObj) {
   // 校验一下扩展
   let firstLetter = extsObj.id.charAt(0);
   if (firstLetter < 'A' || firstLetter > 'Z') throw `扩展名必须以大写字母开头,当前扩展名不符合${extsObj.id}`;
-  let extsRoute = getExtensionRoute(extsObj);
+  let extsRoute = calcOrigRoute(extsObj);
   if (extsRoute) {
     verifyRouteValid(extsObj.id, extsRoute);
   }
@@ -140,13 +179,17 @@ export function registerExtensions(ctx) {
   for (let extsObj of Object.values(extsObjMap)) {
     // 注册路由
     if (extsObj && extsObj.route) {
+      let extsRoute = calcOrigRoute(extsObj);
+
       let extsId = extsObj.id;
-      let extsRoute = extsObj.route;
-      if (typeof extsRoute == 'function') extsRoute = extsRoute(extsObj);
       extsRoute.path = extsObj.routePath('');
       extsRoute.name = extsObj.routeName('');
       extsRoute.meta = extsRoute.meta || {};
       extsRoute.meta.extsId = extsId;
+      dfsHandleRoute(extsRoute, {});
+
+      extsObj.convRoute = extsRoute;
+      // console.log('convRoute', extsRoute);
       router.addRoute('miknas_exts', extsRoute);
     }
   }
@@ -162,4 +205,23 @@ export function scanAllExtension(extsObjMap, modules) {
       extsObjMap[extsId] = extsObj;
     }
   }
+}
+
+export function calcValidExtsInfos(excludeIds) {
+  let ret = {};
+  let allExtsObjs = getAllExtensions();
+  for (let [extsId, extsObj] of Object.entries(allExtsObjs)) {
+    if (excludeIds && excludeIds.includes(extsId)) continue;
+    let indexTo = extsObj.getIndex();
+    if (!indexTo) continue;
+    let info = {
+      id: extsObj.id,
+      desc: extsObj.desc,
+      title: extsObj.title,
+      icon: extsObj.icon || 'extension',
+      indexTo: indexTo,
+    };
+    ret[extsObj.id] = info;
+  }
+  return ret;
 }

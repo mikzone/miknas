@@ -35,21 +35,14 @@ export const boot = async (ctx) => {
   });
 
   router.beforeEach((to) => {
-    let needLogined = to.meta.needLogined;
-    if (needLogined) {
-      if (!officialStore.uid) {
-        MikCall.sendErrorTips('您尚未登录');
+    let [suc, code, errMsg] = officialStore.canAccessByMeta(to.meta);
+    if (!suc) {
+      MikCall.sendErrorTips(errMsg);
+      if (code == 'NotLogined') {
         let loginUrl = officialStore.loginUrl;
         if (loginUrl) window.location.href = officialStore.loginUrl;
-        return false;
       }
-    }
-    let needAuthResId = to.meta.needAuthResId;
-    if (needAuthResId) {
-      if (!officialStore.canAccess(needAuthResId)) {
-        MikCall.sendErrorTips(`您没有权限(${needAuthResId})`);
-        return false;
-      }
+      return false;
     }
   });
 }

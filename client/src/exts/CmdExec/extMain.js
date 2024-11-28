@@ -7,7 +7,6 @@ export const useExtension = defineExtension({
   title: '命令执行',
   desc: '实时执行脚本命令',
   icon: 'terminal',
-  index: true,
 
   // 多页面要用嵌套路由，示例如下
   route: (extsObj) => {

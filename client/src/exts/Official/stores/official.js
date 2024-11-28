@@ -12,7 +12,6 @@ export const useOfficialStore = defineStore('official', {
       userAuths: {},
       // serverConfigs
       serverConfigs: {},
-      extids: {},
       site: {
         // 站点相关信息
         title: 'MikNasClient',
@@ -95,5 +94,22 @@ export const useOfficialStore = defineStore('official', {
     canAccess(resid) {
       return gutil.authCheck(resid, this.userAuths);
     },
+
+    canAccessByMeta(meta) {
+      if (!meta) return false;
+      let needLogined = meta.needLogined;
+      if (needLogined) {
+        if (!this.uid) {
+          return [false, 'NotLogined', '您尚未登录'];
+        }
+      }
+      let needAuthResId = meta.needAuthResId;
+      if (needAuthResId) {
+        if (!this.canAccess(needAuthResId)) {
+          return [false, 'NoAuth', `您没有权限(${needAuthResId})`];
+        }
+      }
+      return [true, null, null];
+    }
   },
 });

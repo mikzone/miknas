@@ -37,23 +37,23 @@
 defineProps({
   title: {
     type: String,
-    required: true,
+    required: true
   },
   to: {
-    type: String,
-    default: undefined,
+    type: [String, Object],
+    default: undefined
   },
   tag: {
     type: String,
-    default: 'a',
+    default: 'a'
   },
   inSubMenu: {
     type: Boolean,
-    default: false,
+    default: false
   },
   exact: {
     type: Boolean,
-    default: true,
-  },
+    default: true
+  }
 });
 </script>

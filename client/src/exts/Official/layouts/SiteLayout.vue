@@ -74,7 +74,7 @@
             :key="extsInfo.id"
             v-ripple
             clickable
-            :to="extsInfo.index"
+            :to="extsInfo.indexTo"
             active-class="text-yellow bg-purple"
           >
             <q-item-section avatar>
@@ -101,32 +101,12 @@
 import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
-import { getAllExtensions, getExtension } from 'miknas/utils';
+import { getExtension, calcValidExtsInfos } from 'miknas/utils';
 import { useOfficialStore } from '../stores/official.js';
-let allExtsObjs = getAllExtensions();
 
 const officialStore = useOfficialStore();
 
-function CalcExtsInfos() {
-  let ret = {};
-  for (let extsId of officialStore.extids) {
-    let extsObj = allExtsObjs[extsId];
-    if (!extsObj) continue;
-    let index = extsObj.getIndex();
-    if (!index) continue;
-    let info = {
-      id: extsObj.id,
-      desc: extsObj.desc,
-      title: extsObj.title,
-      icon: extsObj.icon || 'extension',
-      index: index
-    };
-    ret[extsObj.id] = info;
-  }
-  return ret;
-}
-
-const allExtsInfos = reactive(CalcExtsInfos());
+const allExtsInfos = reactive(calcValidExtsInfos());
 
 const route = useRoute();
 const curExtsId = computed(() => {
