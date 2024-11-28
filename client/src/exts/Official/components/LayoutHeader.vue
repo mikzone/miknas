@@ -15,7 +15,11 @@
           </slot>
         </template>
         <template v-else>
-          <slot name="unlogin-toolbar"></slot>
+          <slot name="unlogin-toolbar">
+            <q-tabs shrink stretch>
+              <PageMenuItem title="登录" :href="officialStore.loginUrl"></PageMenuItem>
+            </q-tabs>
+          </slot>
         </template>
       </slot>
     </q-toolbar>
@@ -23,7 +27,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive } from 'vue';
 
 import { getAllExtensions } from 'miknas/utils';
 import { computed } from 'vue';

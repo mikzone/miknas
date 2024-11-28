@@ -8,17 +8,22 @@
         :label="pluginDetail.pluginDef.Title"
       />
     </q-tabs>
-    <PluginView
-      v-for="pluginDetail in relPlugins"
-      v-show="state.tab === pluginDetail.pluginId"
-      :key="pluginDetail.pluginId"
-      :plugin-detail="pluginDetail"
-      :space-id="props.spaceId"
-      :fspath="props.fspath"
-      separator
-      bordered
-    />
-    <q-inner-loading :showing="loadingMgr.isloading.value" :label="loadingMgr.loadingLabel.value" />
+    <div>
+      <PluginView
+        v-for="pluginDetail in relPlugins"
+        v-show="state.tab === pluginDetail.pluginId"
+        :key="pluginDetail.pluginId"
+        :plugin-detail="pluginDetail"
+        :space-id="props.spaceId"
+        :fspath="props.fspath"
+        separator
+        bordered
+      />
+      <q-inner-loading
+        :showing="loadingMgr.isloading.value"
+        :label="loadingMgr.loadingLabel.value"
+      />
+    </div>
   </div>
 </template>
 <script setup>
