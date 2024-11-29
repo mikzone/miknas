@@ -82,6 +82,46 @@ func FindPathHolder(absRootPath, curPath, targetName string, travelParent bool) 
 	}
 }
 
+type spaceSubDirInfo struct {
+	DirName   string   `json:"dirName"` // 文件夹名
+	PluginIds []string `json:"pluginIds"`
+}
+
+func calcSubDirs(absRootPath, curPath string, pluginDefList []*PluginDef) ([]spaceSubDirInfo, error) {
+	ret := []spaceSubDirInfo{}
+	checkPath := filepath.Join(absRootPath, curPath)
+	checkPath, err := filepath.Abs(checkPath)
+	if err != nil {
+		return ret, err
+	}
+	files, err := os.ReadDir(checkPath)
+	if err != nil {
+		return nil, err
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			dirName := file.Name()
+			newCurPath := filepath.Join(curPath, dirName)
+			pluginIds := []string{}
+			for _, pluginDef := range pluginDefList {
+				anchor := pluginDef.Anchor
+				pluginRootPath, err := FindPathHolder(absRootPath, newCurPath, anchor, false)
+				if err != nil || pluginRootPath == "" {
+					continue
+				}
+				pluginIds = append(pluginIds, pluginDef.Id)
+			}
+			if len(pluginIds) > 0 {
+				ret = append(ret, spaceSubDirInfo{
+					DirName:   dirName,
+					PluginIds: pluginIds,
+				})
+			}
+		}
+	}
+	return ret, nil
+}
+
 func queryFolderDetail(ch *miknas.ContextHelper) {
 	var loc inDataSpaceLocate
 	ch.BindJSON(&loc)
@@ -89,12 +129,23 @@ func queryFolderDetail(ch *miknas.ContextHelper) {
 	spaceDef, ok := ext.SpaceDefMap[loc.SpaceId]
 	if !ok {
 		ch.FailResp("%s工作区不存在", loc.SpaceId)
+		return
 	}
 	absRootPath, err := filepath.Abs(spaceDef.Path)
 	if err != nil {
 		ch.FailResp("工作区路径非法")
+		return
+	}
+	canWalkDir := false
+	ua := ch.GetUserAuth()
+	for _, roleId := range spaceDef.CanWalkDirRoles {
+		if ua.HasRole(roleId) {
+			canWalkDir = true
+			break
+		}
 	}
 	pluginStats := []any{}
+	pluginDefList := []*PluginDef{}
 	for _, pluginId := range spaceDef.Plugins {
 		pluginDef, ok := ext.PluginDefMap[pluginId]
 		if !ok {
@@ -104,6 +155,7 @@ func queryFolderDetail(ch *miknas.ContextHelper) {
 		if anchor == "" {
 			continue
 		}
+		pluginDefList = append(pluginDefList, pluginDef)
 		pluginRootPath, err := FindPathHolder(absRootPath, loc.Fspath, anchor, pluginDef.ShowInSubDirs)
 		if err != nil || pluginRootPath == "" {
 			continue
@@ -115,6 +167,16 @@ func queryFolderDetail(ch *miknas.ContextHelper) {
 	}
 	ret := map[string]any{
 		"pluginStats": pluginStats,
+		"canWalkDir":  canWalkDir,
+	}
+	if !canWalkDir {
+		// 不能浏览文件夹的话，构造一个可用列表
+		subdirs, err := calcSubDirs(absRootPath, loc.Fspath, pluginDefList)
+		if err != nil {
+			ch.FailResp("遍历子目录失败: %v", err.Error())
+			return
+		}
+		ret["subdirs"] = subdirs
 	}
 	ch.SucResp(ret)
 }
@@ -219,6 +281,7 @@ func execPluginJob(ch *miknas.ContextHelper) {
 	jobItem := cmdexec.NewJob(title, jobDef.Cmd.Path, jobDef.Cmd.Args...)
 	jobItem.Cmd.Dir = pluginCurPath
 	jobItem.Cmd.Env = append(os.Environ(), needEnv...)
+	jobItem.NameSpace = jobDef.NameSpace
 	cmdexec.SubmitJob(ch, jobItem)
 	ch.SucResp(map[string]any{
 		"jobInfo":    jobItem.PackClientDict(),

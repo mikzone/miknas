@@ -36,11 +36,12 @@ type PluginJobFormDef struct {
 }
 
 type PluginJobDef struct {
-	Id   string
-	Name string
-	Icon string
-	Form PluginJobFormDef
-	Cmd  PluginActionCmdDef
+	Id        string
+	Name      string
+	Icon      string
+	Form      PluginJobFormDef
+	Cmd       PluginActionCmdDef
+	NameSpace string // 同一个命名空间下的任务会排队执行
 }
 
 type PluginDef struct {
@@ -116,8 +117,9 @@ func ReadPluginDef(file string) (*PluginDef, error) {
 }
 
 type SpaceDef struct {
-	Id      string
-	Name    string
-	Path    string
-	Plugins []string
+	Id              string
+	Name            string
+	Path            string
+	Plugins         []string
+	CanWalkDirRoles []string
 }

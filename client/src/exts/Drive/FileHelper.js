@@ -156,6 +156,9 @@ export const FileUtil = {
       svg: matIconFolder,
     },
   },
+  getPathSep() {
+    return PathSep;
+  },
   baseName(filePath) {
     let l = filePath.split(PathSep);
     return l[l.length - 1];

@@ -9,6 +9,9 @@ export const useWorkStore = defineStore('CustomWorks', {
     state: function () {
         return {
             plugins: {},
+            spaces: {},
+            pluginSimples: {},
+            isLoadMainInfo: false,
         };
     },
 
@@ -27,6 +30,18 @@ export const useWorkStore = defineStore('CustomWorks', {
             let result = iRet.ret;
             result._jobMap = gutil.list2map(result.Jobs, 'Id');
             this.plugins[pluginId] = result;
+        },
+        async refreshMainInfo(force) {
+            if (!force && this.isLoadMainInfo) return;
+            let iRet = await extsObj.mcpost('maininfo');
+            if (!iRet.suc) {
+                MikCall.alertRespErrMsg(iRet);
+                return;
+            }
+            let result = iRet.ret;
+            this.spaces = result.spaces;
+            this.pluginSimples = result.plugins;
+            this.isLoadMainInfo = true;
         },
     },
 });

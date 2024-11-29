@@ -23,6 +23,10 @@ func (m *MyUserAuth) MustGetUid() string {
 	return uid
 }
 
+func (m *MyUserAuth) HasRole(role string) bool {
+	return m.role == role
+}
+
 func (m *MyUserAuth) Refresh() {
 	session := m.ch.GetSession()
 	uid := miknas.AnyToStr(session.Get("uid"))

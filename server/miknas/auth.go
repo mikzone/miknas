@@ -15,6 +15,7 @@ type AuthResId string
 type IUserAuth interface {
 	GetUid() string
 	MustGetUid() string
+	HasRole(role string) bool // 方便一些简单的场景可以直接用角色判断的
 	CanAccess(AuthResId) bool
 	Refresh()
 	GetExtra() map[string]any // 额外信息，比如角色等
