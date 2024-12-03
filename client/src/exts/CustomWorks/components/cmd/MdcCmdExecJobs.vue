@@ -40,13 +40,7 @@
     </template>
     <template #body-cell-runningState="props">
       <q-td :props="props">
-        <q-btn
-          v-if="props.row.runningState == 'done'"
-          size="sm"
-          flat
-          color="positive"
-          label="done"
-        >
+        <q-btn v-if="props.row.runningState == 'done'" size="sm" flat color="positive" label="done">
         </q-btn>
         <q-btn
           v-else-if="props.row.runningState == 'canceled' || props.row.runningState == 'errstop'"
@@ -57,19 +51,10 @@
         >
           <q-tooltip> {{ props.row.failtxt }} </q-tooltip>
         </q-btn>
-        <q-btn
-          v-else
-          size="sm"
-          color="secondary"
-          :label="props.row.runningState"
-        >
+        <q-btn v-else size="sm" color="secondary" :label="props.row.runningState">
           <q-menu>
             <q-list style="min-width: 100px">
-              <q-item
-                v-close-popup
-                clickable
-                @click="tryCancel(props.row.jobId, 'kill')"
-              >
+              <q-item v-close-popup clickable @click="tryCancel(props.row.jobId, 'kill')">
                 <q-item-section>终止任务</q-item-section>
               </q-item>
             </q-list>
@@ -90,51 +75,51 @@ const JobColumns = [
     label: 'jobId',
     field: 'jobId',
     sortable: true,
-    align: 'left',
+    align: 'left'
   },
   {
     name: 'uid',
     label: 'uid',
     field: 'uid',
     sortable: true,
-    align: 'left',
+    align: 'left'
   },
   {
     name: 'runningState',
     label: '运行状态',
     field: 'runningState',
     sortable: true,
-    align: 'left',
+    align: 'left'
   },
   {
     name: 'cmd',
     label: 'CMD',
     field: 'cmd',
     sortable: true,
-    align: 'left',
+    align: 'left'
   },
   {
     name: 'nameSpace',
     label: 'nameSpace',
     field: 'nameSpace',
     sortable: true,
-    align: 'left',
-  },
+    align: 'left'
+  }
 ];
 </script>
 
 <script setup>
 import { gutil, MikCall } from 'miknas/utils';
 import { computed, onMounted, reactive } from 'vue';
-import { fetchResult } from '../exec_cmd_util';
-import { useExtension } from '../extMain';
+import { fetchResult } from '../../exec_cmd_util';
+import useExtension from '../../extMain';
 let extsObj = useExtension();
 
 const state = reactive({
   jobsDict: null,
   refreshTs: '',
   filterTxt: '',
-  isLoading: true,
+  isLoading: true
 });
 
 const jobList = computed(() => {
@@ -170,7 +155,7 @@ async function tryCancel(jobId, killType) {
 }
 
 function showJob(jobId) {
-  fetchResult({ jobId: jobId })
+  fetchResult({ jobId: jobId });
 }
 
 onMounted(() => {

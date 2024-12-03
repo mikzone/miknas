@@ -29,6 +29,10 @@ export const useExtension = defineExtension({
           component: () => import('./pages/IndexPage.vue'),
         },
         {
+          path: 'alljobs',
+          component: () => import('./pages/AllJobsPage.vue'),
+        },
+        {
           path: 'view/:spaceId/:routeSubPath(.*)?',
           name: extsObj.routeName('view'),
           component: () => import('./pages/ExplorerPage.vue'),

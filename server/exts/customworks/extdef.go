@@ -3,12 +3,14 @@ package customworks
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/mikzone/miknas/server/miknas"
 )
 
 type MikNasExt struct {
 	miknas.Extension
+	JmInst       *JobMgr
 	PluginDefMap map[string]*PluginDef
 	SpaceDefMap  map[string]*SpaceDef
 }
@@ -18,6 +20,7 @@ const MExtId = "CustomWorks"
 func New() *MikNasExt {
 	return &MikNasExt{
 		miknas.NewExtension(MExtId),
+		NewJobMgr(),
 		make(map[string]*PluginDef),
 		make(map[string]*SpaceDef),
 	}
@@ -30,6 +33,7 @@ func (ext *MikNasExt) OnBind() {
 		miknas.NewConfItem("CUSTOM_WORKS_PLUGINS", []string{}, "CustomWorks插件定义文件列表", false),
 		miknas.NewConfItem("CUSTOM_WORKS_SPACES", []SpaceDef{}, "CustomWorks工作区列表", false),
 	)
+	regCmdRoutes(ext)
 	regRoutes(ext)
 }
 
@@ -69,4 +73,11 @@ func (ext *MikNasExt) OnInit() {
 	ext.scanPlugins()
 	ext.scanSpaces()
 	regCwFileSpace(ext)
+	ext.Logger().Info("CreatedJobMgr", "Cap", ext.JmInst.Pool.Cap())
+	go func() {
+		for {
+			time.Sleep(1 * time.Second)
+			ext.JmInst.TryMaintainLineUps()
+		}
+	}()
 }

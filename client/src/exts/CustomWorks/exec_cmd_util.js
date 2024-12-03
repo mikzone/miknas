@@ -1,5 +1,5 @@
 import { Dialog } from 'quasar';
-import MdcCmdExecResultDlg from 'miknas/exts/CmdExec/components/MdcCmdExecResultDlg.vue'
+import MdcCmdExecResultDlg from './components/cmd/MdcCmdExecResultDlg.vue';
 
 export function fetchResult({ jobId, aceLang }) {
   return Dialog.create({

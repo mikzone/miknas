@@ -99,8 +99,8 @@
 <script setup>
 import { MikCall } from 'miknas/utils';
 import { MdcAceEditor } from 'miknas/exts/Official/shares';
-import { useExtension } from '../extMain';
 import { onMounted, onBeforeUnmount, reactive } from 'vue';
+import useExtension from '../../extMain';
 let extsObj = useExtension();
 
 const props = defineProps({

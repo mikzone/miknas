@@ -27,7 +27,7 @@
 import { useExtension } from '../extMain';
 import { useMikLoading } from 'miknas/exts/Official/shares';
 import { MikCall } from 'miknas/utils';
-import { fetchResult } from 'miknas/exts/CmdExec/exec_cmd_util';
+import { fetchResult } from '../exec_cmd_util';
 import { coOpenFormDlg } from 'miknas/exts/Official/shares';
 // import { useWorkStore } from '../stores/work';
 

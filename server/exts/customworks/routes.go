@@ -6,13 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mikzone/miknas/server/exts/cmdexec"
 	"github.com/mikzone/miknas/server/miknas"
 )
-
-type inDataName struct {
-	Name string `json:"name" form:"name" binding:"required"`
-}
 
 type inDataSpaceLocate struct {
 	SpaceId string `json:"spaceId" binding:"required"`
@@ -276,11 +271,11 @@ func execPluginJob(ch *miknas.ContextHelper) {
 		}
 	}
 	title := fmt.Sprintf("%s-%s", pluginDef.Title, jobDef.Name)
-	jobItem := cmdexec.NewJob(title, jobDef.Cmd.Path, jobDef.Cmd.Args...)
+	jobItem := NewCmdJob(title, jobDef.Cmd.Path, jobDef.Cmd.Args...)
 	jobItem.Cmd.Dir = pluginCurPath
 	jobItem.Cmd.Env = append(os.Environ(), needEnv...)
 	jobItem.NameSpace = jobDef.NameSpace
-	cmdexec.SubmitJob(ch, jobItem)
+	SubmitCmdJob(ch, jobItem)
 	ch.SucResp(map[string]any{
 		"jobInfo":    jobItem.PackClientDict(),
 		"nextAction": "ShowExec",

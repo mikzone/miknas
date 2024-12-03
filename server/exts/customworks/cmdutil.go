@@ -1,4 +1,4 @@
-package cmdexec
+package customworks
 
 import (
 	"bufio"
@@ -313,11 +313,11 @@ func (jm *JobMgr) RunJobItem(item *JobItem) {
 }
 
 func GetJobMgr(ch *miknas.ContextHelper) *JobMgr {
-	ext := ch.GetApp().GetExt(ExtId).(*MikNasExt)
+	ext := ch.GetRelExt().(*MikNasExt)
 	return ext.JmInst
 }
 
-func NewJob(title string, name string, arg ...string) *JobItem {
+func NewCmdJob(title string, name string, arg ...string) *JobItem {
 	ctx, cancel := context.WithCancel(context.Background())
 	c := exec.CommandContext(ctx, name, arg...)
 	// 参考: https://github.com/Reso1mi/blog-md/blob/master/Golang踩坑exec取消不退出.md
@@ -334,7 +334,7 @@ func NewJob(title string, name string, arg ...string) *JobItem {
 	return item
 }
 
-func SubmitJob(ch *miknas.ContextHelper, item *JobItem) {
+func SubmitCmdJob(ch *miknas.ContextHelper, item *JobItem) {
 	uid := tryGetUid(ch)
 	item.Uid = uid
 	jobmgr := GetJobMgr(ch)

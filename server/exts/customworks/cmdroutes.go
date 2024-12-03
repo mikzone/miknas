@@ -1,4 +1,4 @@
-package cmdexec
+package customworks
 
 import (
 	"github.com/mikzone/miknas/server/miknas"
@@ -45,7 +45,7 @@ func reqCancelJob(ch *miknas.ContextHelper) {
 	ch.SucResp("取消成功")
 }
 
-func regRoutes(ext *MikNasExt) {
+func regCmdRoutes(ext *MikNasExt) {
 	ext.POST("/queryJobResult", queryJobResult)
 	ext.POST("/queryAllJobs", queryAllJobs)
 	ext.POST("/reqCancelJob", reqCancelJob)
