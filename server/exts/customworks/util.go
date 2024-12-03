@@ -41,6 +41,7 @@ type PluginJobDef struct {
 	Icon      string
 	Form      PluginJobFormDef
 	Cmd       PluginActionCmdDef
+	Confirm   bool   // 是否在执行前给个二次确认
 	NameSpace string // 同一个命名空间下的任务会排队执行
 }
 

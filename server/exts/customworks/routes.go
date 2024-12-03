@@ -23,15 +23,10 @@ type inDataPlugin struct {
 	Id string `json:"id" binding:"required"`
 }
 
-func hello(ch *miknas.ContextHelper) {
-	var loc inDataName
-	ch.BindJSON(&loc)
-	ch.SucResp(fmt.Sprintf("hello, %s !", loc.Name))
-}
-
 func maininfo(ch *miknas.ContextHelper) {
 	// spaces
 	ext := ch.GetRelExt().(*MikNasExt)
+	ch.Ensure(ext.Res("vist"))
 	spaces := map[string]any{}
 	for _, space := range ext.SpaceDefMap {
 		spaceInfo := map[string]any{}
@@ -126,6 +121,7 @@ func queryFolderDetail(ch *miknas.ContextHelper) {
 	var loc inDataSpaceLocate
 	ch.BindJSON(&loc)
 	ext := ch.GetRelExt().(*MikNasExt)
+	ch.Ensure(ext.Res("vist"))
 	spaceDef, ok := ext.SpaceDefMap[loc.SpaceId]
 	if !ok {
 		ch.FailResp("%s工作区不存在", loc.SpaceId)
@@ -185,6 +181,7 @@ func queryPluginDef(ch *miknas.ContextHelper) {
 	var loc inDataPlugin
 	ch.BindJSON(&loc)
 	ext := ch.GetRelExt().(*MikNasExt)
+	ch.Ensure(ext.Res("vist"))
 	pluginDef, ok := ext.PluginDefMap[loc.Id]
 	if !ok {
 		ch.FailResp("%s插件不存在", loc.Id)
@@ -205,6 +202,7 @@ func execPluginJob(ch *miknas.ContextHelper) {
 	var loc inDataExecPluginJob
 	ch.BindJSON(&loc)
 	ext := ch.GetRelExt().(*MikNasExt)
+	ch.Ensure(ext.Res("vist"))
 	pluginDef, ok := ext.PluginDefMap[loc.PluginId]
 	if !ok {
 		ch.FailResp("%s插件不存在", loc.PluginId)
@@ -291,7 +289,6 @@ func execPluginJob(ch *miknas.ContextHelper) {
 }
 
 func regRoutes(ext *MikNasExt) {
-	ext.POST("/hello", hello)
 	ext.POST("/maininfo", maininfo)
 	ext.POST("/queryFolderDetail", queryFolderDetail)
 	ext.POST("/queryPluginDef", queryPluginDef)

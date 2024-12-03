@@ -153,7 +153,13 @@ func (jm *JobMgr) AddJob(item *JobItem) {
 	}
 }
 
-func signalToJobItem(item *JobItem) {
+func tryGetUid(ch *miknas.ContextHelper) string {
+	uid := ch.GetUserAuth().GetUid()
+	if uid == "" {
+		// 没有uid的话，使用它的ip
+		uid = ch.Ctx.ClientIP()
+	}
+	return uid
 }
 
 var killType2Signal = map[string]syscall.Signal{
@@ -170,7 +176,7 @@ func (jm *JobMgr) TryStopJob(ch *miknas.ContextHelper, jobid string, killType st
 	if item.CheckInState(JobStCanceled, JobStDone, JobStErrStop) {
 		return nil
 	}
-	uid := ch.GetUserAuth().MustGetUid()
+	uid := tryGetUid(ch)
 	item.CancelUser = uid
 	if item.CheckInState(JobStWaiting, JobStLineUp) {
 		item.FailTxt += fmt.Sprintf("[用户 %s 取消了该任务]", uid)
@@ -329,8 +335,7 @@ func NewJob(title string, name string, arg ...string) *JobItem {
 }
 
 func SubmitJob(ch *miknas.ContextHelper, item *JobItem) {
-	userauth := ch.GetUserAuth()
-	uid := userauth.MustGetUid()
+	uid := tryGetUid(ch)
 	item.Uid = uid
 	jobmgr := GetJobMgr(ch)
 	jobmgr.AddJob(item)

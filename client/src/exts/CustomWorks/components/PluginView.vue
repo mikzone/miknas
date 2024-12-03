@@ -57,9 +57,13 @@ const props = defineProps({
 
 const extsObj = useExtension();
 
-async function execJob(jobId, formData) {
+async function execJob(jobId, formData, ignoreConfirm) {
   let jobConf = props.pluginDetail.pluginDef._jobMap[jobId];
   if (!jobConf) return;
+  if (!ignoreConfirm && jobConf.Confirm) {
+    let isOk = await MikCall.coMakeConfirm(`是否确认执行: ${jobConf.Name}`);
+    if (!isOk) return;
+  }
   let stateName = `正在请求执行`;
   loadingMgr.addLoadingState(stateName);
   let iRet = await extsObj.mcpost('execPluginJob', {
@@ -90,7 +94,7 @@ async function execJob(jobId, formData) {
     }
     let [isOk, newFormData] = await coOpenFormDlg(formProps);
     if (!isOk) return;
-    return await execJob(jobId, newFormData);
+    return await execJob(jobId, newFormData, true);
   }
 }
 </script>
