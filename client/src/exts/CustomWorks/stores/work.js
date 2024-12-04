@@ -43,5 +43,17 @@ export const useWorkStore = defineStore('CustomWorks', {
             this.pluginSimples = result.plugins;
             this.isLoadMainInfo = true;
         },
+        async reloadPluginDef(pluginId) {
+            if (!pluginId) return;
+            let isOk = await MikCall.coMakeConfirm('确定重载插件吗?\n(应该只在插件定义发生改变的时候才需要重载)');
+            if (!isOk) return;
+            let iRet = await extsObj.mcpost('reloadPluginDef', { Id: pluginId });
+            if (!iRet.suc) {
+                MikCall.alertRespErrMsg(iRet);
+                return;
+            }
+            this.queryPluginDef(pluginId, true);
+            MikCall.sendSuccTips('重载插件成功');
+        },
     },
 });

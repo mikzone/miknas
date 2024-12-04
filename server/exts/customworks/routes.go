@@ -302,9 +302,24 @@ func execPluginJob(ch *miknas.ContextHelper) {
 	})
 }
 
+func reloadPluginDef(ch *miknas.ContextHelper) {
+	var loc inDataPlugin
+	ch.BindJSON(&loc)
+	ext := ch.GetRelExt().(*MikNasExt)
+	ch.Ensure(ext.Res("vist"))
+	pluginDef, ok := ext.PluginDefMap[loc.Id]
+	if !ok {
+		ch.FailResp("%s插件不存在", loc.Id)
+		return
+	}
+	tryRegPluginDef(ext, pluginDef.DefFile)
+	ch.SucResp("更新完成")
+}
+
 func regRoutes(ext *MikNasExt) {
 	ext.POST("/maininfo", maininfo)
 	ext.POST("/queryFolderDetail", queryFolderDetail)
 	ext.POST("/queryPluginDef", queryPluginDef)
 	ext.POST("/execPluginJob", execPluginJob)
+	ext.POST("/reloadPluginDef", reloadPluginDef)
 }

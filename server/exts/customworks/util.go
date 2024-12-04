@@ -52,6 +52,7 @@ type PluginJobDef struct {
 
 type PluginDef struct {
 	Id            string
+	DefFile       string
 	Title         string
 	Desc          string
 	Anchor        string
@@ -127,7 +128,17 @@ func ReadPluginDef(file string) (*PluginDef, error) {
 		return nil, fmt.Errorf("get abs root dir fail: %v", err)
 	}
 	ret.RootDir = absRootDir
+	ret.DefFile = file
 	return &ret, nil
+}
+
+func tryRegPluginDef(ext *MikNasExt, defFile string) {
+	pluginDef, err := ReadPluginDef(defFile)
+	if err != nil {
+		panic(miknas.NewFailRet("ReadPluginDefFail, file: %s, error: %v", defFile, err))
+	}
+	ext.Logger().Info("RegPluginDef", "file", defFile, "PluginId", pluginDef.Id)
+	ext.PluginDefMap[pluginDef.Id] = pluginDef
 }
 
 type SpaceDef struct {

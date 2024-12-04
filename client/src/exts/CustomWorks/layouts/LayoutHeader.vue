@@ -14,6 +14,15 @@
                 </q-item-label>
                 <q-item-label caption>{{ defInfo.Desc }}</q-item-label>
               </q-item-section>
+              <q-item-section side>
+                <q-btn
+                  flat
+                  dense
+                  round
+                  icon="refresh"
+                  @click="workStore.reloadPluginDef(defInfo.Id)"
+                ></q-btn>
+              </q-item-section>
             </q-item>
           </q-list>
         </q-btn-dropdown>

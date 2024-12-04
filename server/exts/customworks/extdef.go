@@ -41,12 +41,7 @@ func (ext *MikNasExt) scanPlugins() {
 	ConfMgr := ext.App.ConfMgr
 	defFiles := ConfMgr.Get("CUSTOM_WORKS_PLUGINS").([]string)
 	for _, defFile := range defFiles {
-		pluginDef, err := ReadPluginDef(defFile)
-		if err != nil {
-			panic(fmt.Errorf("ReadPluginDefFail, file: %s, error: %v", defFile, err))
-		}
-		ext.Logger().Info("RegPluginDef", "file", defFile, "PluginId", pluginDef.Id)
-		ext.PluginDefMap[pluginDef.Id] = pluginDef
+		tryRegPluginDef(ext, defFile)
 	}
 }
 
