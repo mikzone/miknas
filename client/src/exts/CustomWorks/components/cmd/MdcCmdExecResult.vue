@@ -40,11 +40,13 @@
         </q-list>
       </div>
       <MdcAceEditor
+        v-if="props.showMode == 'editor'"
         v-model="state.stdoutInfo.txt"
         class="col"
         auto-scroll-to-end
         :ace-lang="props.aceLang"
       ></MdcAceEditor>
+      <XtermCom v-show="props.showMode == 'xterm'" ref="xtermRef" class="col"></XtermCom>
       <div class="col-auto">
         <q-banner
           v-if="state.jobItem.runningState == 'done'"
@@ -99,8 +101,9 @@
 <script setup>
 import { MikCall } from 'miknas/utils';
 import { MdcAceEditor } from 'miknas/exts/Official/shares';
-import { onMounted, onBeforeUnmount, reactive } from 'vue';
+import { onMounted, onBeforeUnmount, reactive, ref, watch, nextTick } from 'vue';
 import useExtension from '../../extMain';
+import XtermCom from './XtermCom.vue';
 let extsObj = useExtension();
 
 const props = defineProps({
@@ -112,6 +115,10 @@ const props = defineProps({
     // 从那个位置开始读取输出
     type: Number,
     default: -1
+  },
+  showMode: {
+    type: String,
+    default: 'xterm'
   },
   aceLang: {
     type: String,
@@ -133,6 +140,15 @@ const state = reactive({
 const KILL_TYPES = ['SIGKILL', 'SIGTERM', 'SIGINT'];
 
 const emit = defineEmits(['finishExec']);
+
+const xtermRef = ref(null);
+window.uuxtermRef = xtermRef;
+
+function onNewTxtArrive(txt) {
+  if (props.showMode == 'xterm' && xtermRef.value) {
+    xtermRef.value.write(txt);
+  }
+}
 
 async function tryRefreshExecResult() {
   if (state.jobItem && ['done', 'canceled', 'errstop'].includes(state.jobItem.runningState)) {
@@ -162,6 +178,7 @@ async function tryRefreshExecResult() {
     state.stdoutInfo.start = newJobItem.stdoutInfo.start;
     state.stdoutInfo.end = newJobItem.stdoutInfo.end;
     state.stdoutInfo.txt = newJobItem.stdoutInfo.txt;
+    onNewTxtArrive(newJobItem.stdoutInfo.txt);
     // console.log('newJobItem1', newJobItem.stdoutInfo);
   } else if (state.stdoutInfo.end + 1 == newJobItem.stdoutInfo.start) {
     // 将文本拼接起来
@@ -169,6 +186,7 @@ async function tryRefreshExecResult() {
       state.stdoutInfo.end = newJobItem.stdoutInfo.end;
       state.stdoutInfo.txt += newJobItem.stdoutInfo.txt;
       // console.log('newJobItem2', newJobItem.stdoutInfo);
+      onNewTxtArrive(newJobItem.stdoutInfo.txt);
     }
   }
   if (!['done', 'canceled', 'errstop'].includes(newJobItem.runningState)) {
@@ -193,20 +211,20 @@ async function tryCancel(jobId, killType) {
   await tryRefreshExecResult();
 }
 
+watch(xtermRef, (newVal) => {
+  if (newVal) {
+    // 首次加载的时候，将文本写入
+    newVal.write(state.stdoutInfo.txt);
+  }
+});
+
 onMounted(() => {
-  tryRefreshExecResult();
+  nextTick(async () => {
+    tryRefreshExecResult();
+  });
 });
 
 onBeforeUnmount(() => {
   state.isUnMount = true;
 });
 </script>
-<style lang="sass">
-.td-cmd
-  max-height: 80px
-  overflow: auto
-  margin: 0
-  color: white
-  background: #333
-  padding: 10px
-</style>

@@ -5,6 +5,7 @@
     no-esc-dismiss
     transition-show="slide-up"
     transition-hide="slide-down"
+    :transition-duration="0"
     @hide="onDialogHide"
   >
     <q-layout
