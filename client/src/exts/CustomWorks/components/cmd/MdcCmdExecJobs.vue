@@ -89,7 +89,13 @@
     </template>
     <template #body-cell-jobId="cellProps">
       <q-td :props="cellProps" @click="showJob(cellProps.value)">
-        <q-btn flat padding="none" color="primary" :label="cellProps.row.title">
+        <q-btn flat padding="none" color="primary" no-caps>
+          <div class="text-left">
+            <div>{{ cellProps.row.title }}</div>
+            <div class="text-grey text-caption">
+              {{ cellProps.row.FormAbstract }}
+            </div>
+          </div>
           <q-tooltip>查看详情</q-tooltip>
         </q-btn>
       </q-td>
@@ -201,9 +207,9 @@ const JobColumns = [
     align: 'left'
   },
   {
-    name: 'pluginRootPath',
-    label: 'pluginRootPath',
-    field: 'pluginRootPath',
+    name: 'pluginWorkRoot',
+    label: 'pluginWorkRoot',
+    field: 'pluginWorkRoot',
     sortable: true,
     align: 'left'
   }
@@ -227,7 +233,7 @@ const props = defineProps({
     type: String,
     default: ''
   },
-  pluginRootPath: {
+  pluginWorkRoot: {
     type: String,
     default: ''
   }
@@ -248,7 +254,7 @@ const state = reactive({
     runAt: false,
     spaceId: false,
     pluginId: false,
-    pluginRootPath: false
+    pluginWorkRoot: false
   },
   isLoading: true
 });
@@ -273,7 +279,7 @@ async function tryRefreshJobsDict() {
   let iRet = await extsObj.mcpost('queryAllJobs', {
     spaceId: props.spaceId,
     pluginId: props.pluginId,
-    pluginRootPath: props.pluginRootPath
+    pluginWorkRoot: props.pluginWorkRoot
   });
   if (!iRet.suc) {
     MikCall.alertRespErrMsg(iRet);

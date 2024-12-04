@@ -1,9 +1,11 @@
 package customworks
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/mikzone/miknas/server/miknas"
 	"github.com/pelletier/go-toml/v2"
@@ -36,13 +38,16 @@ type PluginJobFormDef struct {
 }
 
 type PluginJobDef struct {
-	Id        string
-	Name      string
-	Icon      string
-	Form      PluginJobFormDef
-	Cmd       PluginActionCmdDef
-	Confirm   bool   // 是否在执行前给个二次确认
-	NameSpace string // 同一个命名空间下的任务会排队执行
+	Id                   string
+	Name                 string
+	Icon                 string
+	Form                 PluginJobFormDef
+	Cmd                  PluginActionCmdDef
+	Confirm              bool               // 是否在执行前给个二次确认
+	NameSpaceTpl         string             // 同一个命名空间下的任务会排队执行
+	NameSpaceTemplate    *template.Template // 命名空间模板，用于生成实际的命名空间
+	FormAbstractTpl      string
+	FormAbstractTemplate *template.Template
 }
 
 type PluginDef struct {
@@ -101,6 +106,14 @@ func ReadPluginDef(file string) (*PluginDef, error) {
 		}
 		baseName := filepath.Base(path)
 		job.Id = baseName[:len(baseName)-mLenTomlExt]
+		if job.NameSpaceTpl != "" {
+			tplName := fmt.Sprintf("Customworks_NameSpace_%s_%s", ret.Id, job.Id)
+			job.NameSpaceTemplate = template.Must(template.New(tplName).Parse(job.NameSpaceTpl))
+		}
+		if job.FormAbstractTpl != "" {
+			tplName := fmt.Sprintf("Customworks_FormAbstract_%s_%s", ret.Id, job.Id)
+			job.FormAbstractTemplate = template.Must(template.New(tplName).Parse(job.FormAbstractTpl))
+		}
 		ret.Jobs = append(ret.Jobs, job)
 		return nil
 	})
@@ -123,4 +136,16 @@ type SpaceDef struct {
 	Path            string
 	Plugins         []string
 	CanWalkDirRoles []string
+}
+
+func MustExecTemplate(tpl *template.Template, data any) string {
+	if tpl == nil {
+		return ""
+	}
+	buf := bytes.Buffer{}
+	err := tpl.Execute(&buf, data)
+	if err != nil {
+		panic(fmt.Errorf("exec template fail: %v", err))
+	}
+	return buf.String()
 }

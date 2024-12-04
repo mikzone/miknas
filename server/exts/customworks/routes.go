@@ -95,8 +95,8 @@ func calcSubDirs(absRootPath, curPath string, pluginDefList []*PluginDef) ([]spa
 			pluginIds := []string{}
 			for _, pluginDef := range pluginDefList {
 				anchor := pluginDef.Anchor
-				pluginRootPath, err := FindPathHolder(absRootPath, newCurPath, anchor, false)
-				if err != nil || pluginRootPath == "" {
+				pluginWorkRoot, err := FindPathHolder(absRootPath, newCurPath, anchor, false)
+				if err != nil || pluginWorkRoot == "" {
 					continue
 				}
 				pluginIds = append(pluginIds, pluginDef.Id)
@@ -147,13 +147,13 @@ func queryFolderDetail(ch *miknas.ContextHelper) {
 			continue
 		}
 		pluginDefList = append(pluginDefList, pluginDef)
-		pluginRootPath, err := FindPathHolder(absRootPath, loc.Fspath, anchor, pluginDef.ShowInSubDirs)
-		if err != nil || pluginRootPath == "" {
+		pluginWorkRoot, err := FindPathHolder(absRootPath, loc.Fspath, anchor, pluginDef.ShowInSubDirs)
+		if err != nil || pluginWorkRoot == "" {
 			continue
 		}
 		pluginStats = append(pluginStats, map[string]any{
 			"id":       pluginId,
-			"rootPath": pluginRootPath,
+			"rootPath": pluginWorkRoot,
 		})
 	}
 	ret := map[string]any{
@@ -186,11 +186,21 @@ func queryPluginDef(ch *miknas.ContextHelper) {
 }
 
 type inDataExecPluginJob struct {
-	SpaceId  string          `json:"spaceId" binding:"required"`
-	PluginId string          `json:"pluginId" binding:"required"`
-	JobId    string          `json:"jobId" binding:"required"`
-	Fspath   string          `json:"fspath"`
-	FormData *map[string]any `json:"formData"`
+	SpaceId  string             `json:"spaceId" binding:"required"`
+	PluginId string             `json:"pluginId" binding:"required"`
+	JobId    string             `json:"jobId" binding:"required"`
+	Fspath   string             `json:"fspath"`
+	FormData *map[string]string `json:"formData"`
+}
+
+// 用来做模板替换的数据结构
+type jobExecTemplateHolder struct {
+	SpaceId        string
+	PluginId       string
+	PluginWorkRoot string
+	PluginWorkDir  string
+	PluginDefRoot  string
+	FormData       map[string]string
 }
 
 func execPluginJob(ch *miknas.ContextHelper) {
@@ -218,16 +228,24 @@ func execPluginJob(ch *miknas.ContextHelper) {
 		ch.FailResp("工作区路径非法")
 		return
 	}
-	pluginCurPath := filepath.Join(absRootPath, loc.Fspath)
-	pluginRootPath, err := FindPathHolder(absRootPath, loc.Fspath, pluginDef.Anchor, pluginDef.ShowInSubDirs)
-	if err != nil || pluginRootPath == "" {
+	pluginWorkDir := filepath.Join(absRootPath, loc.Fspath)
+	pluginWorkRoot, err := FindPathHolder(absRootPath, loc.Fspath, pluginDef.Anchor, pluginDef.ShowInSubDirs)
+	if err != nil || pluginWorkRoot == "" {
 		ch.FailResp("当前不在插件可管辖的目录下")
 		return
 	}
 	needEnv := []string{
-		fmt.Sprintf("CW_PLUGIN_WORK_ROOT=%s", pluginRootPath),
-		fmt.Sprintf("CW_PLUGIN_WORK_DIR=%s", pluginCurPath),
+		fmt.Sprintf("CW_PLUGIN_WORK_ROOT=%s", pluginWorkRoot),
+		fmt.Sprintf("CW_PLUGIN_WORK_DIR=%s", pluginWorkDir),
 		fmt.Sprintf("CW_PLUGIN_DEF_ROOT=%s", pluginDef.RootDir),
+	}
+	templateHolder := jobExecTemplateHolder{
+		SpaceId:        loc.SpaceId,
+		PluginId:       loc.PluginId,
+		PluginWorkRoot: pluginWorkRoot,
+		PluginWorkDir:  pluginWorkDir,
+		PluginDefRoot:  pluginDef.RootDir,
+		FormData:       map[string]string{},
 	}
 	if len(jobDef.Form.FormConfs) > 0 {
 		if loc.FormData == nil {
@@ -246,14 +264,9 @@ func execPluginJob(ch *miknas.ContextHelper) {
 					return
 				}
 				if conf.SelectOptions != nil {
-					valStr, ok := val.(string)
-					if !ok {
-						ch.FailResp("表单数据不完整")
-						return
-					}
 					isInValues := false
 					for _, option := range *conf.SelectOptions {
-						if valStr == option.Value {
+						if val == option.Value {
 							isInValues = true
 							break
 						}
@@ -267,18 +280,20 @@ func execPluginJob(ch *miknas.ContextHelper) {
 				if strings.HasPrefix(key, "CW_PARAM_") {
 					needEnv = append(needEnv, fmt.Sprintf("%s=%v", key, val))
 				}
+				templateHolder.FormData[key] = val
 			}
 		}
 	}
 	// title := fmt.Sprintf("%s-%s", pluginDef.Title, jobDef.Name)
 	title := jobDef.Name
 	jobItem := NewCmdJob(title, jobDef.Cmd.Path, jobDef.Cmd.Args...)
-	jobItem.Cmd.Dir = pluginCurPath
+	jobItem.Cmd.Dir = pluginWorkDir
 	jobItem.Cmd.Env = append(os.Environ(), needEnv...)
-	jobItem.NameSpace = jobDef.NameSpace
+	jobItem.NameSpace = MustExecTemplate(jobDef.NameSpaceTemplate, templateHolder)
+	jobItem.FormAbstract = MustExecTemplate(jobDef.FormAbstractTemplate, templateHolder)
 	jobItem.SpaceId = loc.SpaceId
 	jobItem.PluginId = loc.PluginId
-	jobItem.PluginRootPath = pluginRootPath
+	jobItem.PluginWorkRoot = pluginWorkRoot
 	SubmitCmdJob(ch, jobItem)
 	ch.SucResp(map[string]any{
 		"jobInfo":    jobItem.PackClientDict(),

@@ -28,7 +28,7 @@
       ref="execJobsRef"
       :space-id="props.spaceId"
       :plugin-id="props.pluginDetail.pluginStat.id"
-      :plugin-root-path="props.pluginDetail.pluginStat.rootPath"
+      :plugin-work-root="props.pluginDetail.pluginStat.rootPath"
     />
   </div>
 </template>

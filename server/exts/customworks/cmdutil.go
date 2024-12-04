@@ -26,12 +26,13 @@ type JobItem struct {
 	JobId          string
 	SpaceId        string // 空间id
 	PluginId       string // 插件id
-	PluginRootPath string // 插件根目录
+	PluginWorkRoot string // 插件根目录
 	Title          string
 	Uid            string
 	Cmd            *exec.Cmd
 	Cancel         context.CancelFunc
 	NameSpace      string
+	FormAbstract   string
 	RunningState   string
 	CancelUser     string
 	OutTxt         string
@@ -75,6 +76,7 @@ func (item *JobItem) PackClientDict() miknas.H {
 		"cmd":            item.Cmd.String(),
 		"cwd":            item.Cmd.Dir,
 		"nameSpace":      item.NameSpace,
+		"FormAbstract":   item.FormAbstract,
 		"runningState":   item.RunningState,
 		"cancelUser":     item.CancelUser,
 		"failtxt":        item.FailTxt,
@@ -83,7 +85,7 @@ func (item *JobItem) PackClientDict() miknas.H {
 		"stateAt":        item.StateAt,
 		"spaceId":        item.SpaceId,
 		"pluginId":       item.PluginId,
-		"pluginRootPath": item.PluginRootPath,
+		"pluginWorkRoot": item.PluginWorkRoot,
 	}
 	return ret
 }
