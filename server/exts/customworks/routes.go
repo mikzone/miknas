@@ -270,7 +270,8 @@ func execPluginJob(ch *miknas.ContextHelper) {
 			}
 		}
 	}
-	title := fmt.Sprintf("%s-%s", pluginDef.Title, jobDef.Name)
+	// title := fmt.Sprintf("%s-%s", pluginDef.Title, jobDef.Name)
+	title := jobDef.Name
 	jobItem := NewCmdJob(title, jobDef.Cmd.Path, jobDef.Cmd.Args...)
 	jobItem.Cmd.Dir = pluginCurPath
 	jobItem.Cmd.Env = append(os.Environ(), needEnv...)

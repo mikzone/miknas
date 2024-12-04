@@ -69,20 +69,21 @@ func (item *JobItem) PackClientStdOut(start int) miknas.H {
 
 func (item *JobItem) PackClientDict() miknas.H {
 	ret := miknas.H{
-		"jobId":        item.JobId,
-		"uid":          item.Uid,
-		"title":        item.Title,
-		"cmd":          item.Cmd.String(),
-		"cwd":          item.Cmd.Dir,
-		"nameSpace":    item.NameSpace,
-		"runningState": item.RunningState,
-		"cancelUser":   item.CancelUser,
-		"failtxt":      item.FailTxt,
-		"submitAt":     item.SubmitAt,
-		"runAt":        item.RunAt,
-		"stateAt":      item.StateAt,
-		"spaceId":      item.SpaceId,
-		"pluginId":     item.PluginId,
+		"jobId":          item.JobId,
+		"uid":            item.Uid,
+		"title":          item.Title,
+		"cmd":            item.Cmd.String(),
+		"cwd":            item.Cmd.Dir,
+		"nameSpace":      item.NameSpace,
+		"runningState":   item.RunningState,
+		"cancelUser":     item.CancelUser,
+		"failtxt":        item.FailTxt,
+		"submitAt":       item.SubmitAt,
+		"runAt":          item.RunAt,
+		"stateAt":        item.StateAt,
+		"spaceId":        item.SpaceId,
+		"pluginId":       item.PluginId,
+		"pluginRootPath": item.PluginRootPath,
 	}
 	return ret
 }
