@@ -176,7 +176,7 @@ func MustExecTemplate(tpl *template.Template, data any) string {
 	return buf.String()
 }
 
-var validCmdArgInputRe = regexp.MustCompile(`^[a-zA-Z0-9=._+:@%/-]+$`)
+var validCmdArgInputRe = regexp.MustCompile(`^[a-zA-Z0-9=._+:@%/-]*$`)
 
 func IsValidCmdArgInput(arg string) bool {
 	return validCmdArgInputRe.MatchString(arg)

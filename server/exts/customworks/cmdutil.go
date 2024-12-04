@@ -190,12 +190,12 @@ func (jm *JobMgr) TryStopJob(ch *miknas.ContextHelper, jobid string, killType st
 		return miknas.NewFailRet("jobid(%s) is not exist", jobid)
 	}
 	if item.CheckInState(JobStCanceled, JobStDone, JobStErrStop) {
-		return nil
+		return miknas.NewFailRet("作业已结束")
 	}
 	uid := tryGetUid(ch)
 	item.CancelUser = uid
 	if item.CheckInState(JobStWaiting, JobStLineUp) {
-		item.FailTxt += fmt.Sprintf("[用户 %s 取消了该任务]", uid)
+		item.FailTxt += fmt.Sprintf("[用户 %s 取消了等待中的该作业]", uid)
 		item.SetState(JobStCanceled)
 	} else if item.CheckInState(JobStRunning) {
 		killSignal, ok := killType2Signal[killType]
@@ -211,7 +211,7 @@ func (jm *JobMgr) TryStopJob(ch *miknas.ContextHelper, jobid string, killType st
 		if err != nil {
 			return miknas.NewFailRet("发送信号失败: %v", err)
 		}
-		item.FailTxt += fmt.Sprintf("[用户2 %s 取消了该任务]", uid)
+		item.FailTxt += fmt.Sprintf("[用户 %s 取消了运行中的该作业]", uid)
 	}
 	return nil
 }

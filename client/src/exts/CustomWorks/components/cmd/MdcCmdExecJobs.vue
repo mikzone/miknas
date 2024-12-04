@@ -102,26 +102,19 @@
     </template>
     <template #body-cell-runningState="cellProps">
       <q-td :props="cellProps">
-        <q-btn
-          v-if="cellProps.row.runningState == 'done'"
-          size="sm"
-          flat
-          color="positive"
-          label="done"
-        >
-        </q-btn>
-        <q-btn
+        <span v-if="cellProps.row.runningState == 'done'" class="text-positive">
+          {{ cellProps.row.runningState }}
+        </span>
+        <span
           v-else-if="
             cellProps.row.runningState == 'canceled' || cellProps.row.runningState == 'errstop'
           "
-          size="sm"
-          flat
-          color="negative"
-          :label="cellProps.row.runningState"
+          class="text-negative"
         >
+          {{ cellProps.row.runningState }}
           <q-tooltip> {{ cellProps.row.failtxt }} </q-tooltip>
-        </q-btn>
-        <q-btn v-else size="sm" color="secondary" :label="cellProps.row.runningState">
+        </span>
+        <q-btn v-else size="sm" color="secondary" :label="cellProps.row.runningState" align="left">
           <q-menu>
             <q-list style="min-width: 100px">
               <q-item v-close-popup clickable @click="tryCancel(cellProps.row.jobId, 'kill')">
@@ -247,14 +240,14 @@ const state = reactive({
   visibleColumnMap: {
     jobId: true,
     runningState: true,
-    stateAt: true,
+    stateAt: false,
     uid: true,
     nameSpace: true,
-    submitAt: false,
+    submitAt: true,
     runAt: false,
-    spaceId: false,
-    pluginId: false,
-    pluginWorkRoot: false
+    spaceId: !props.spaceId,
+    pluginId: !props.spaceId,
+    pluginWorkRoot: !props.pluginWorkRoot
   },
   isLoading: true
 });
@@ -271,7 +264,11 @@ const visibleColumns = computed(() => {
 
 const jobList = computed(() => {
   if (!state.jobsDict) return [];
-  return Object.values(state.jobsDict);
+  let l = Object.values(state.jobsDict);
+  l.sort((a, b) => {
+    return b.submitAt.localeCompare(a.submitAt);
+  });
+  return l;
 });
 
 async function tryRefreshJobsDict() {
