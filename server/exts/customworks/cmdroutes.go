@@ -22,10 +22,27 @@ func queryJobResult(ch *miknas.ContextHelper) {
 	ch.SucResp(ret)
 }
 
+type inDataQueryAllJobs struct {
+	SpaceId        string `json:"spaceId"`
+	PluginId       string `json:"pluginId"`
+	PluginRootPath string `json:"pluginRootPath"`
+}
+
 func queryAllJobs(ch *miknas.ContextHelper) {
+	var loc inDataQueryAllJobs
+	ch.BindJSON(&loc)
 	jm := GetJobMgr(ch)
 	ret := miknas.H{}
 	for jobId, jobItem := range jm.Jobs {
+		if loc.SpaceId != "" && jobItem.SpaceId != loc.SpaceId {
+			continue
+		}
+		if loc.PluginId != "" && jobItem.PluginId != loc.PluginId {
+			continue
+		}
+		if loc.PluginRootPath != "" && jobItem.PluginRootPath != loc.PluginRootPath {
+			continue
+		}
 		ret[jobId] = jobItem.PackClientDict()
 	}
 	ch.SucResp(ret)

@@ -1,8 +1,8 @@
-import { Dialog } from 'quasar';
 import MdcCmdExecResultDlg from './components/cmd/MdcCmdExecResultDlg.vue';
+import { MikCall } from 'miknas/utils';
 
-export function fetchResult({ jobId, aceLang }) {
-  return Dialog.create({
+export async function coFetchResult({ jobId, aceLang }) {
+  return await MikCall.coCreateDialog({
     component: MdcCmdExecResultDlg,
     componentProps: {
       jobId: jobId,

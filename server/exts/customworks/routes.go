@@ -275,6 +275,9 @@ func execPluginJob(ch *miknas.ContextHelper) {
 	jobItem.Cmd.Dir = pluginCurPath
 	jobItem.Cmd.Env = append(os.Environ(), needEnv...)
 	jobItem.NameSpace = jobDef.NameSpace
+	jobItem.SpaceId = loc.SpaceId
+	jobItem.PluginId = loc.PluginId
+	jobItem.PluginRootPath = pluginRootPath
 	SubmitCmdJob(ch, jobItem)
 	ch.SucResp(map[string]any{
 		"jobInfo":    jobItem.PackClientDict(),

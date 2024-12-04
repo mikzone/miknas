@@ -40,7 +40,7 @@
         无相关子目录
       </q-card-section>
     </q-card>
-    <q-card>
+    <q-card class="q-mb-md">
       <q-tabs v-model="state.tab" align="left" class="bg-grey-3 shadow-1" :breakpoint="0">
         <q-tab
           v-for="pluginDetail in relPlugins"
@@ -49,27 +49,24 @@
           :label="pluginDetail.pluginDef.Title"
         />
       </q-tabs>
-      <div>
-        <PluginView
-          v-for="pluginDetail in relPlugins"
-          v-show="state.tab === pluginDetail.pluginId"
-          :key="pluginDetail.pluginId"
-          :plugin-detail="pluginDetail"
-          :space-id="props.spaceId"
-          :fspath="props.fspath"
-          separator
-          bordered
-        />
-        <q-inner-loading
-          :showing="loadingMgr.isloading.value"
-          :label="loadingMgr.loadingLabel.value"
-        />
-      </div>
+      <PluginView
+        v-for="pluginDetail in relPlugins"
+        v-show="state.tab === pluginDetail.pluginId"
+        :key="pluginDetail.pluginId"
+        :plugin-detail="pluginDetail"
+        :space-id="props.spaceId"
+        :fspath="props.fspath"
+      />
+      <q-inner-loading
+        :showing="loadingMgr.isloading.value"
+        :label="loadingMgr.loadingLabel.value"
+      />
     </q-card>
+    <q-card class="q-mb-md"> </q-card>
   </template>
 </template>
 <script setup>
-import { computed, onMounted, reactive } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useMikLoading } from 'miknas/exts/Official/shares';
 import { MdcDriveAliveView } from 'miknas/exts/Drive/shares';
 import { useExtension } from '../extMain';

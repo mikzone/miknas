@@ -1,5 +1,6 @@
 <template>
   <q-table
+    flat
     :rows="jobList"
     :columns="JobColumns"
     :filter="state.filterTxt"
@@ -10,7 +11,10 @@
     v-bind="$attrs"
   >
     <template #top>
-      <div class="q-table__title">查看进行中的任务({{ state.refreshTs }})</div>
+      <div>
+        <div class="text-subtitle2">最近作业</div>
+        <div class="text-caption text-grey-8">[刷新时间: {{ state.refreshTs }}]</div>
+      </div>
       <q-space />
       <q-input
         v-model="state.filterTxt"
@@ -24,12 +28,46 @@
         </template>
       </q-input>
       <q-btn
+        v-if="refreshMgr.nextTs.value"
+        class="q-ml-sm"
+        :disable="state.isLoading"
+        :loading="refreshMgr.percentage.value > 0"
+        :percentage="refreshMgr.percentage.value"
+        dark-percentage
+        label="刷新"
+      >
+        <template #loading>
+          <q-spinner-hourglass v-if="!state.isLoading" />
+          <q-spinner v-else />
+        </template>
+        <q-tooltip> 每{{ refreshSec }}秒自动刷新 </q-tooltip>
+      </q-btn>
+      <q-btn
+        v-else
         class="q-ml-sm"
         color="primary"
         :disable="state.isLoading"
         label="刷新"
-        @click="tryRefreshJobsDict()"
-      />
+        @click="refreshMgr.forceRefresh()"
+      >
+        <template #loading>
+          <q-spinner-hourglass v-if="!state.isLoading" />
+          <q-spinner v-else />
+        </template>
+        <q-tooltip> 每{{ refreshSec }}秒自动刷新 </q-tooltip>
+      </q-btn>
+      <q-btn dense flat stretch round icon="more_vert" @click.stop.prevent="">
+        <q-menu auto-close>
+          <q-list dense>
+            <q-item clickable @click="state.autoRefresh = !state.autoRefresh">
+              <q-item-section side>
+                <q-checkbox v-model="state.autoRefresh" dense />
+              </q-item-section>
+              <q-item-section>自动刷新</q-item-section>
+            </q-item>
+          </q-list>
+        </q-menu>
+      </q-btn>
     </template>
     <template #body-cell-jobId="cellProps">
       <q-td :props="cellProps" @click="showJob(cellProps.value)">
@@ -78,13 +116,6 @@ const JobColumns = [
     align: 'left'
   },
   {
-    name: 'uid',
-    label: 'uid',
-    field: 'uid',
-    sortable: true,
-    align: 'left'
-  },
-  {
     name: 'runningState',
     label: '运行状态',
     field: 'runningState',
@@ -92,9 +123,16 @@ const JobColumns = [
     align: 'left'
   },
   {
-    name: 'cmd',
-    label: 'CMD',
-    field: 'cmd',
+    name: 'title',
+    label: '作业名称',
+    field: 'title',
+    sortable: true,
+    align: 'left'
+  },
+  {
+    name: 'uid',
+    label: 'uid',
+    field: 'uid',
     sortable: true,
     align: 'left'
   },
@@ -110,15 +148,32 @@ const JobColumns = [
 
 <script setup>
 import { gutil, MikCall } from 'miknas/utils';
-import { computed, onMounted, reactive } from 'vue';
-import { fetchResult } from '../../exec_cmd_util';
+import { computed, onMounted, reactive, watch } from 'vue';
+import { coFetchResult } from '../../exec_cmd_util';
 import useExtension from '../../extMain';
+import { useAutoRefresh } from 'miknas/exts/Official/shares';
 let extsObj = useExtension();
+
+const props = defineProps({
+  spaceId: {
+    type: String,
+    default: ''
+  },
+  pluginId: {
+    type: String,
+    default: ''
+  },
+  pluginRootPath: {
+    type: String,
+    default: ''
+  }
+});
 
 const state = reactive({
   jobsDict: null,
   refreshTs: '',
   filterTxt: '',
+  autoRefresh: false,
   isLoading: true
 });
 
@@ -129,7 +184,11 @@ const jobList = computed(() => {
 
 async function tryRefreshJobsDict() {
   state.isLoading = true;
-  let iRet = await extsObj.mcpost('queryAllJobs', {});
+  let iRet = await extsObj.mcpost('queryAllJobs', {
+    spaceId: props.spaceId,
+    pluginId: props.pluginId,
+    pluginRootPath: props.pluginRootPath
+  });
   if (!iRet.suc) {
     MikCall.alertRespErrMsg(iRet);
     state.isLoading = false;
@@ -141,6 +200,10 @@ async function tryRefreshJobsDict() {
   state.isLoading = false;
 }
 
+const refreshSec = 5;
+
+const refreshMgr = useAutoRefresh(refreshSec * 1000, tryRefreshJobsDict, true);
+
 async function tryCancel(jobId, killType) {
   let isOk = await MikCall.coMakeConfirm(`是否取消执行该任务`);
   if (!isOk) return;
@@ -151,14 +214,34 @@ async function tryCancel(jobId, killType) {
   }
   let cbRet = iRet.ret;
   MikCall.sendSuccTips(cbRet);
-  await tryRefreshJobsDict();
+  await refreshMgr.forceRefresh();
 }
 
-function showJob(jobId) {
-  fetchResult({ jobId: jobId });
+async function forceRefresh() {
+  await refreshMgr.forceRefresh();
+}
+
+async function showJob(jobId) {
+  await coFetchResult({ jobId: jobId });
+  forceRefresh();
 }
 
 onMounted(() => {
-  tryRefreshJobsDict();
+  refreshMgr.forceRefresh();
+});
+
+watch(
+  () => state.autoRefresh,
+  (newVal) => {
+    if (newVal) {
+      refreshMgr.start();
+    } else {
+      refreshMgr.stop();
+    }
+  }
+);
+
+defineExpose({
+  forceRefresh
 });
 </script>

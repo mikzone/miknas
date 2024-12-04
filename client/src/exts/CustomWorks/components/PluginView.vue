@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-list separator bordered>
+    <q-list separator>
       <q-item
         v-for="jobConf in props.pluginDetail.pluginDef.Jobs"
         :key="jobConf.Id"
@@ -18,8 +18,18 @@
           <q-item-label caption>{{ jobConf.Shell }}</q-item-label>
         </q-item-section>
       </q-item>
+      <q-inner-loading
+        :showing="loadingMgr.isloading.value"
+        :label="loadingMgr.loadingLabel.value"
+      />
     </q-list>
-    <q-inner-loading :showing="loadingMgr.isloading.value" :label="loadingMgr.loadingLabel.value" />
+    <q-separator />
+    <MdcCmdExecJobs
+      ref="execJobsRef"
+      :space-id="props.spaceId"
+      :plugin-id="props.pluginDetail.pluginStat.id"
+      :plugin-root-path="props.pluginDetail.pluginStat.rootPath"
+    />
   </div>
 </template>
 <script setup>
@@ -27,11 +37,15 @@
 import { useExtension } from '../extMain';
 import { useMikLoading } from 'miknas/exts/Official/shares';
 import { MikCall } from 'miknas/utils';
-import { fetchResult } from '../exec_cmd_util';
+import { coFetchResult } from '../exec_cmd_util';
 import { coOpenFormDlg } from 'miknas/exts/Official/shares';
+import { ref } from 'vue';
+import MdcCmdExecJobs from './cmd/MdcCmdExecJobs.vue';
 // import { useWorkStore } from '../stores/work';
 
 // const workStore = useWorkStore();
+
+const emit = defineEmits(['startedJob']);
 
 const loadingMgr = useMikLoading();
 
@@ -56,6 +70,7 @@ const props = defineProps({
 // });
 
 const extsObj = useExtension();
+const execJobsRef = ref(null);
 
 async function execJob(jobId, formData, ignoreConfirm) {
   let jobConf = props.pluginDetail.pluginDef._jobMap[jobId];
@@ -86,7 +101,9 @@ async function execJob(jobId, formData, ignoreConfirm) {
       MikCall.sendErrorTips('执行错误，创建Job失败');
       return;
     }
-    fetchResult({ jobId: execJobId });
+    await coFetchResult({ jobId: execJobId });
+    emit('startedJob', { jobId: execJobId });
+    execJobsRef.value.forceRefresh();
   } else if (result.nextAction == 'FillForm') {
     let formProps = result.form;
     if (!formProps.title) {

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/mikzone/miknas/server/miknas"
 	"github.com/panjf2000/ants/v2"
@@ -22,16 +23,22 @@ const JobStCanceled = "canceled"
 const JobStErrStop = "errstop"
 
 type JobItem struct {
-	JobId        string
-	Title        string
-	Uid          string
-	Cmd          *exec.Cmd
-	Cancel       context.CancelFunc
-	NameSpace    string
-	RunningState string
-	CancelUser   string
-	OutTxt       string
-	FailTxt      string
+	JobId          string
+	SpaceId        string // 空间id
+	PluginId       string // 插件id
+	PluginRootPath string // 插件根目录
+	Title          string
+	Uid            string
+	Cmd            *exec.Cmd
+	Cancel         context.CancelFunc
+	NameSpace      string
+	RunningState   string
+	CancelUser     string
+	OutTxt         string
+	FailTxt        string
+	SubmitAt       time.Time // 提交的时间
+	RunAt          time.Time // 真正开始运行的时间
+	StateAt        time.Time // 状态更新的时间
 }
 
 const mPackBytes = 128 * 1024
@@ -71,12 +78,18 @@ func (item *JobItem) PackClientDict() miknas.H {
 		"runningState": item.RunningState,
 		"cancelUser":   item.CancelUser,
 		"failtxt":      item.FailTxt,
+		"submitAt":     item.SubmitAt,
+		"runAt":        item.RunAt,
+		"stateAt":      item.StateAt,
+		"spaceId":      item.SpaceId,
+		"pluginId":     item.PluginId,
 	}
 	return ret
 }
 
 func (item *JobItem) SetState(state string) {
 	item.RunningState = state
+	item.StateAt = time.Now()
 }
 
 func (item *JobItem) CheckInState(states ...string) bool {
@@ -276,6 +289,7 @@ func (jm *JobMgr) RunJobItem(item *JobItem) {
 	}
 	// 命令的错误输出和标准输出都连接到同一个管道
 	c.Stderr = c.Stdout
+	item.RunAt = time.Now()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
@@ -337,6 +351,7 @@ func NewCmdJob(title string, name string, arg ...string) *JobItem {
 func SubmitCmdJob(ch *miknas.ContextHelper, item *JobItem) {
 	uid := tryGetUid(ch)
 	item.Uid = uid
+	item.SubmitAt = time.Now()
 	jobmgr := GetJobMgr(ch)
 	jobmgr.AddJob(item)
 }

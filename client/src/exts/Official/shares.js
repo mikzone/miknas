@@ -7,11 +7,11 @@ export {
   FormTypes,
   DataRule,
   coOpenFormDlg,
-  // ConfsHelper,
 } from './helpers/FormHelper';
 
 export { default as useMikLoading } from './compositions/useMikLoading';
 export { default as useFormView } from './compositions/useFormView';
+export { default as useAutoRefresh } from './compositions/useAutoRefresh';
 
 export { default as PageMenuItem } from './components/PageMenuItem.vue';
 export { default as PageSubMenu } from './components/PageSubMenu.vue';

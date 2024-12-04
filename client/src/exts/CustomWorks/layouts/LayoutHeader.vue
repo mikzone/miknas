@@ -2,8 +2,8 @@
   <LayoutHeader>
     <template #login-toolbar>
       <q-tabs shrink stretch>
-        <PageMenuItem title="所有工作区" :to="extsObj.routePath('')"></PageMenuItem>
-        <PageMenuItem title="所有操作" :to="extsObj.routePath('alljobs')"></PageMenuItem>
+        <PageMenuItem title="工作区" :to="extsObj.routePath('')"></PageMenuItem>
+        <PageMenuItem title="作业" :to="extsObj.routePath('alljobs')"></PageMenuItem>
         <q-btn-dropdown stretch flat label="所有插件">
           <q-list separator bordered>
             <q-item v-for="defInfo in workStore.pluginSimples" :key="defInfo.Id">
