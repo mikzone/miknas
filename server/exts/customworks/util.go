@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"text/template"
 
 	"github.com/mikzone/miknas/server/miknas"
 	"github.com/pelletier/go-toml/v2"
 )
 
-type PluginActionCmdDef struct {
-	Path string
-	Args []string
+type PluginJobCmdDef struct {
+	Path          string
+	Args          []string
+	PathTemplate  *template.Template
+	ArgsTemplates []*template.Template
 }
 
 type FormSelectOptionDef struct {
@@ -42,7 +45,7 @@ type PluginJobDef struct {
 	Name                 string
 	Icon                 string
 	Form                 PluginJobFormDef
-	Cmd                  PluginActionCmdDef
+	Cmd                  PluginJobCmdDef
 	Confirm              bool               // 是否在执行前给个二次确认
 	NameSpaceTpl         string             // 同一个命名空间下的任务会排队执行
 	NameSpaceTemplate    *template.Template // 命名空间模板，用于生成实际的命名空间
@@ -72,6 +75,18 @@ func ReadPluginJobDef(file string) (*PluginJobDef, error) {
 	err = toml.Unmarshal(fileBytes, &ret)
 	if err != nil {
 		return nil, err
+	}
+	if ret.Cmd.Path != "" {
+		tplName := fmt.Sprintf("Customworks_Job_Cmd_Path_%s", file)
+		ret.Cmd.PathTemplate = template.Must(template.New(tplName).Parse(ret.Cmd.Path))
+	}
+	if len(ret.Cmd.Args) > 0 {
+		argsTemplates := make([]*template.Template, len(ret.Cmd.Args))
+		for i, arg := range ret.Cmd.Args {
+			tplName := fmt.Sprintf("Customworks_Job_Cmd_Args_%d_%s", i, file)
+			argsTemplates[i] = template.Must(template.New(tplName).Parse(arg))
+		}
+		ret.Cmd.ArgsTemplates = argsTemplates
 	}
 	return &ret, nil
 }
@@ -159,4 +174,10 @@ func MustExecTemplate(tpl *template.Template, data any) string {
 		panic(fmt.Errorf("exec template fail: %v", err))
 	}
 	return buf.String()
+}
+
+var validCmdArgInputRe = regexp.MustCompile(`^[a-zA-Z0-9=._+:@%/-]+$`)
+
+func IsValidCmdArgInput(arg string) bool {
+	return validCmdArgInputRe.MatchString(arg)
 }

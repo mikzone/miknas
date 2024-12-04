@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/mikzone/miknas/server/miknas"
 )
@@ -234,11 +233,6 @@ func execPluginJob(ch *miknas.ContextHelper) {
 		ch.FailResp("当前不在插件可管辖的目录下")
 		return
 	}
-	needEnv := []string{
-		fmt.Sprintf("CW_PLUGIN_WORK_ROOT=%s", pluginWorkRoot),
-		fmt.Sprintf("CW_PLUGIN_WORK_DIR=%s", pluginWorkDir),
-		fmt.Sprintf("CW_PLUGIN_DEF_ROOT=%s", pluginDef.RootDir),
-	}
 	templateHolder := jobExecTemplateHolder{
 		SpaceId:        loc.SpaceId,
 		PluginId:       loc.PluginId,
@@ -277,18 +271,24 @@ func execPluginJob(ch *miknas.ContextHelper) {
 					}
 				}
 
-				if strings.HasPrefix(key, "CW_PARAM_") {
-					needEnv = append(needEnv, fmt.Sprintf("%s=%v", key, val))
+				if !IsValidCmdArgInput(val) {
+					ch.FailResp("表单数据项(%s)的值非法:含有特殊字符", conf.Title)
+					return
 				}
+
 				templateHolder.FormData[key] = val
 			}
 		}
 	}
 	// title := fmt.Sprintf("%s-%s", pluginDef.Title, jobDef.Name)
 	title := jobDef.Name
-	jobItem := NewCmdJob(title, jobDef.Cmd.Path, jobDef.Cmd.Args...)
+	cmdPath := MustExecTemplate(jobDef.Cmd.PathTemplate, templateHolder)
+	cmdArgs := []string{}
+	for _, argTpl := range jobDef.Cmd.ArgsTemplates {
+		cmdArgs = append(cmdArgs, MustExecTemplate(argTpl, templateHolder))
+	}
+	jobItem := NewCmdJob(title, cmdPath, cmdArgs...)
 	jobItem.Cmd.Dir = pluginWorkDir
-	jobItem.Cmd.Env = append(os.Environ(), needEnv...)
 	jobItem.NameSpace = MustExecTemplate(jobDef.NameSpaceTemplate, templateHolder)
 	jobItem.FormAbstract = MustExecTemplate(jobDef.FormAbstractTemplate, templateHolder)
 	jobItem.SpaceId = loc.SpaceId
@@ -298,7 +298,6 @@ func execPluginJob(ch *miknas.ContextHelper) {
 	ch.SucResp(map[string]any{
 		"jobInfo":    jobItem.PackClientDict(),
 		"nextAction": "ShowExec",
-		"needEnv":    needEnv,
 	})
 }
 
