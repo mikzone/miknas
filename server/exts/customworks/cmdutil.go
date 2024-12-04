@@ -104,19 +104,21 @@ func (item *JobItem) CheckInState(states ...string) bool {
 }
 
 type JobMgr struct {
-	GenedId   int
-	Jobs      map[string]*JobItem
-	Pool      *ants.PoolWithFunc
-	Lineups   []string // those can be submit
-	Waits     map[string][]string
-	LineupMux sync.Mutex
-	WaitMux   sync.Mutex
+	GenedId    int
+	Jobs       map[string]*JobItem
+	Pool       *ants.PoolWithFunc
+	Lineups    []string // those can be submit
+	Waits      map[string][]string
+	LineupMux  sync.Mutex
+	WaitMux    sync.Mutex
+	MaxKeepCnt int
 }
 
 func NewJobMgr() *JobMgr {
 	jm := &JobMgr{
-		Jobs:  map[string]*JobItem{},
-		Waits: map[string][]string{},
+		Jobs:       map[string]*JobItem{},
+		Waits:      map[string][]string{},
+		MaxKeepCnt: 100,
 	}
 	pool, err := ants.NewPoolWithFunc(20, func(i interface{}) {
 		item := i.(*JobItem)
@@ -287,7 +289,7 @@ func (jm *JobMgr) OnItemFinish(item *JobItem) {
 
 func (jm *JobMgr) ClearOldJobItems() {
 	// 清理太久的作业
-	keepNum := 100 // todo: 配置化
+	keepNum := jm.MaxKeepCnt
 	list := []*JobItem{}
 	for _, item := range jm.Jobs {
 		if item.CheckInState(JobStCanceled, JobStDone, JobStErrStop) {

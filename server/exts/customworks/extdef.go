@@ -32,6 +32,7 @@ func (ext *MikNasExt) OnBind() {
 	ext.RegConfs(
 		miknas.NewConfItem("CUSTOM_WORKS_PLUGINS", []string{}, "CustomWorks插件定义文件列表", false),
 		miknas.NewConfItem("CUSTOM_WORKS_SPACES", []SpaceDef{}, "CustomWorks工作区列表", false),
+		miknas.NewConfItem("CUSTOM_WORKS_JOB_MAX_KEEP_CNT", 100, "CustomWorks历史作业保留数量", false),
 	)
 	regCmdRoutes(ext)
 	regRoutes(ext)
@@ -67,6 +68,9 @@ func (ext *MikNasExt) OnInit() {
 	// you can register your filespace, init your db here
 	ext.scanPlugins()
 	ext.scanSpaces()
+	ConfMgr := ext.App.ConfMgr
+	maxKeepCnt := ConfMgr.Get("CUSTOM_WORKS_JOB_MAX_KEEP_CNT").(int)
+	ext.JmInst.MaxKeepCnt = maxKeepCnt
 	regCwFileSpace(ext)
 	ext.Logger().Info("CreatedJobMgr", "Cap", ext.JmInst.Pool.Cap())
 	go func() {
