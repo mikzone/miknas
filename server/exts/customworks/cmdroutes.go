@@ -18,6 +18,8 @@ func queryJobResult(ch *miknas.ContextHelper) {
 		ch.FailResp("jobid(%s)不存在", loc.JobId)
 	}
 	ret := jobItem.PackClientDict()
+	ret["cmd"] = jobItem.Cmd.String()
+	ret["cwd"] = jobItem.Cmd.Dir
 	ret["stdoutInfo"] = jobItem.PackClientStdOut(loc.ReadStdoutStart)
 	ch.SucResp(ret)
 }

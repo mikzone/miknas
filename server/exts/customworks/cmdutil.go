@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -73,8 +74,6 @@ func (item *JobItem) PackClientDict() miknas.H {
 		"jobId":          item.JobId,
 		"uid":            item.Uid,
 		"title":          item.Title,
-		"cmd":            item.Cmd.String(),
-		"cwd":            item.Cmd.Dir,
 		"nameSpace":      item.NameSpace,
 		"FormAbstract":   item.FormAbstract,
 		"runningState":   item.RunningState,
@@ -143,7 +142,7 @@ func (jm *JobMgr) AddToLineUp(jobid string) {
 	}
 	jm.LineupMux.Lock()
 	defer jm.LineupMux.Unlock()
-	item.RunningState = JobStLineUp
+	item.SetState(JobStLineUp)
 	jm.Lineups = append(jm.Lineups, jobid)
 }
 
@@ -282,6 +281,29 @@ func (jm *JobMgr) TryMaintainLineUps() {
 	}
 }
 
+func (jm *JobMgr) OnItemFinish(item *JobItem) {
+	jm.ClearOldJobItems()
+}
+
+func (jm *JobMgr) ClearOldJobItems() {
+	// 清理太久的作业
+	keepNum := 100 // todo: 配置化
+	list := []*JobItem{}
+	for _, item := range jm.Jobs {
+		if item.CheckInState(JobStCanceled, JobStDone, JobStErrStop) {
+			list = append(list, item)
+		}
+	}
+	if len(list) > keepNum {
+		slices.SortFunc(list, func(a, b *JobItem) int {
+			return b.StateAt.Compare(a.StateAt)
+		})
+		for _, item := range list[keepNum:] {
+			delete(jm.Jobs, item.JobId)
+		}
+	}
+}
+
 func (jm *JobMgr) RunJobItem(item *JobItem) {
 	c := item.Cmd
 	stdout, err := c.StdoutPipe()
@@ -327,6 +349,7 @@ func (jm *JobMgr) RunJobItem(item *JobItem) {
 	} else {
 		item.SetState(JobStDone)
 	}
+	jm.OnItemFinish(item)
 }
 
 func GetJobMgr(ch *miknas.ContextHelper) *JobMgr {
