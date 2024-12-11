@@ -3,11 +3,11 @@ import {
   FormTypes,
   coOpenFormDlg,
 } from 'miknas/exts/Official/shares';
-import { MikCall, MyAes } from 'miknas/utils';
+import { MikCall, MyAes, gPinia } from 'miknas/utils';
 import SecretAttach from './components/attaches/SecretAttach.vue';
 import { useNoteStore } from './stores/note';
 
-const noteStore = useNoteStore();
+const noteStore = useNoteStore(gPinia);
 // 所有附件其实能改的也就是它自己data的那块数据，因为这是个json对象，所以我们可以直接用jsonData(已经预处理了)
 // formData 是传到form那边的数据
 export const attachCfgs = {

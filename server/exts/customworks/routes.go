@@ -287,8 +287,12 @@ func execPluginJob(ch *miknas.ContextHelper) {
 	for _, argTpl := range jobDef.Cmd.ArgsTemplates {
 		cmdArgs = append(cmdArgs, MustExecTemplate(argTpl, templateHolder))
 	}
+	needEnv := []string{
+		fmt.Sprintf("CW_JOB_SUBMIT_UID=%s", tryGetUid(ch, false)),
+	}
 	jobItem := NewCmdJob(title, cmdPath, cmdArgs...)
 	jobItem.Cmd.Dir = pluginWorkDir
+	jobItem.Cmd.Env = append(os.Environ(), needEnv...)
 	jobItem.NameSpace = MustExecTemplate(jobDef.NameSpaceTemplate, templateHolder)
 	jobItem.FormAbstract = MustExecTemplate(jobDef.FormAbstractTemplate, templateHolder)
 	jobItem.SpaceId = loc.SpaceId

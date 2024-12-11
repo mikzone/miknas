@@ -1,8 +1,6 @@
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
 
 import App from './App.vue'
-import { router, boot, scanAllExtension } from 'miknas/utils'
 
 import { Quasar, Notify, Dialog, LocalStorage } from 'quasar'
 import quasarLang from 'quasar/lang/zh-CN'
@@ -16,8 +14,6 @@ import 'quasar/src/css/index.sass'
 
 const myApp = createApp(App)
 
-myApp.use(createPinia())
-
 myApp.use(Quasar, {
   plugins: {
     Notify,
@@ -26,6 +22,10 @@ myApp.use(Quasar, {
   }, // import Quasar plugins and add here
   lang: quasarLang
 })
+
+import { router, boot, scanAllExtension, gPinia } from 'miknas/utils';
+
+myApp.use(gPinia)
 
 async function run() {
   let extsObjMap = {};

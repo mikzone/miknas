@@ -3,6 +3,7 @@
 import { useOfficialStore } from 'miknas/exts/Official/stores/official.js';
 import { MikCall, gutil } from './official_utils';
 import { defineAsyncComponent } from 'vue';
+import { gPinia } from './instance';
 
 class Extension {
 
@@ -30,11 +31,11 @@ class Extension {
 
   hasAuth(extResId) {
     let resid = this.res(extResId);
-    return useOfficialStore().canAccess(resid);
+    return useOfficialStore(gPinia).canAccess(resid);
   }
 
   serverUrl(extsSubUrl, param, isfull) {
-    let url = useOfficialStore().mdServerUrl(`${this.id}/${extsSubUrl}`);
+    let url = useOfficialStore(gPinia).mdServerUrl(`${this.id}/${extsSubUrl}`);
     let href = MikCall.genUrlWithParam(url, param);
     if (isfull) {
       return gutil.genFullUrl(href);
@@ -53,7 +54,7 @@ class Extension {
   }
 
   routePath(extsSubUrl) {
-    return useOfficialStore().extsClientUrl(this.id, extsSubUrl);
+    return useOfficialStore(gPinia).extsClientUrl(this.id, extsSubUrl);
   }
 
   routeName(subName) {
@@ -70,7 +71,7 @@ class Extension {
     let meta = oneRoute.meta;
     if (!meta) return undefined;
     // 判断它是否能访问
-    let [suc] = useOfficialStore().canAccessByMeta(meta);
+    let [suc] = useOfficialStore(gPinia).canAccessByMeta(meta);
     if (!suc) {
       return undefined;
     }

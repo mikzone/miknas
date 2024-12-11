@@ -3,6 +3,7 @@ import '../../css/app.scss'
 import { gutil, MikCall } from './official_utils'
 import { registerExtensions } from './exts_utils'
 import { useOfficialStore } from 'miknas/exts/Official/stores/official';
+import { gPinia } from './instance';
 
 // "async" is optional;
 // more info on params: https://quasar.dev/quasar-cli/boot-files
@@ -14,7 +15,7 @@ export const boot = async (ctx) => {
   gutil.setCacheData('app', app);
   gutil.setCacheData('router', router);
 
-  const officialStore = useOfficialStore();
+  const officialStore = useOfficialStore(gPinia);
   await officialStore.loadOnInit();
 
   // 注册路由

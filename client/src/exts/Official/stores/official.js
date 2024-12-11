@@ -1,4 +1,3 @@
-import { useExtension as useOfficialExtension } from 'miknas/exts/Official/extMain';
 import { defineStore } from 'pinia';
 import { getExtension } from 'miknas/utils';
 import { gutil, MikCall } from 'miknas/utils';
@@ -54,7 +53,7 @@ export const useOfficialStore = defineStore('official', {
     // 客户端初始化好的时候
     async loadOnInit() {
       // 先去加载玩家数据
-      let extsObj = useOfficialExtension()
+      let extsObj = getExtension('Official');
       let iRet = await extsObj.mcpost('getClientInitInfo');
       if (!iRet.suc) {
         MikCall.alertRespErrMsg(iRet);

@@ -3,12 +3,12 @@ import { onMounted, reactive } from 'vue';
 import { useMikLoading } from 'miknas/exts/Official/shares';
 import { downloadFile, FileUtil } from 'miknas/exts/Drive/shares';
 import { computed } from 'vue';
-import { gutil, MikCall } from 'miknas/utils';
+import { gutil, MikCall, gPinia } from 'miknas/utils';
 import { useViewStore } from '../stores/view';
 
-const viewStore = useViewStore();
+const viewStore = useViewStore(gPinia);
 
-export default function usePreviewView({fsid, initFilePath}) {
+export default function usePreviewView({ fsid, initFilePath }) {
 
   if (!fsid) return;
   if (!initFilePath) return;

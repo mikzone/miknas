@@ -1,6 +1,6 @@
 import { computed, nextTick, onActivated, onDeactivated } from 'vue';
 import { date, Dialog, openURL } from 'quasar';
-import { gutil, MikCall } from 'miknas/utils';
+import { gutil, MikCall, gPinia } from 'miknas/utils';
 import { onMounted, reactive } from 'vue';
 import { useExtension } from './extMain';
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute } from 'vue-router';
@@ -25,8 +25,8 @@ import {
   openTextCopyDlg,
 } from '../Official/shares';
 
-const viewStore = useViewStore();
-const cacheStore = useCacheStore();
+const viewStore = useViewStore(gPinia);
+const cacheStore = useCacheStore(gPinia);
 
 const PROCESS_COLUMNS = [
   {
